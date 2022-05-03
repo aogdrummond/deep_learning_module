@@ -1,0 +1,33 @@
+{
+    "dataset": {
+        "path": "D:/DL_Datasets/TCC_Files_Generation/Geracao/rectangular_impedanced",
+        "factor": 4,
+        "xSamples": 32,
+        "ySamples": 32
+    },
+    "training": {
+        "batch_size": 4,
+        "num_epochs": 10000,
+        "num_steps_val": 1,
+        "num_steps_train": 1,
+        "session_id": 50,
+        "lr": 0.0002,
+        "loss": {
+            "valid_weight": 1,
+            "hole_weight": 12
+        }
+    },
+    "evaluation": {
+        "min_mics": 5,
+        "max_mics": 65,
+        "step_mics": 15,
+        "num_comb": 50
+    },
+    "visualization": {
+        "num_mics": 6,
+        "source": 0
+    },
+    "prediction": {
+        "path": "C:/Users/aledr/Desktop/teste/1_d_6_6_36_s_0_0_.mat"
+    }
+}
