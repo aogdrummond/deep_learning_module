@@ -9,7 +9,7 @@ import data
 import copy
 import numpy as np
 
-sys.path.append('util')
+# sys.path.append('util')
 
 def get_general_checkpoint_path(session_dir,number_checkpoint):
     """ Returns the path of the most recent checkpoint in session_dir.
@@ -453,9 +453,9 @@ def predict_soundfield(config_path):
     visualization_path = os.path.join(session_dir, 'prediction',"visualization")
     if not os.path.exists(visualization_path): os.makedirs(visualization_path)
 
-    filepath = config["prediction"]["path"]
+    filepath = config["prediction"]["predicted_file_path"]
 
-    mask_generator = data.MaskGenerator(config['dataset']['xSamples']//config['dataset']['factor'], config['dataset']['ySamples']//config['dataset']['factor'], len(frequencies), num_mics=config['visualization']['num_mics'])
+    mask_generator = data.MaskGenerator(config['dataset']['xSamples']//config['dataset']['factor'], config['dataset']['ySamples']//config['dataset']['factor'], len(frequencies), num_mics=config['prediction']['num_mics'])
 
     # Get measured sound field
     sf_sample = util.load_generated_soundfield(filepath, config['visualization']['source'])    

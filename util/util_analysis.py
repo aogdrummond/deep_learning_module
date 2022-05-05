@@ -10,11 +10,8 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from matplotlib.pyplot import cm
-from random import seed
 from skimage.measure import compare_ssim as ssim
-from keras.utils import conv_utils
-from keras import backend as K
+from datetime import datetime
 
 CONSTANTE_REF = 0.6
 """ Saving/loading/checking files from disk """
@@ -414,7 +411,7 @@ def analyze_and_plot_real_results(results_filepath, config):
         pretty_plot(GLOBAL_SSIM, 'SSIM', plot_path, source)
 
 
-def analyze_and_plot_simulated_results(evaluation_path, session_dir, config, dB=True):
+def analyze_and_plot_simulated_results(evaluation_path, config, dB=True):
     """ Read simulated results .csv files, analyze data, and plot.
 
         Args:
@@ -435,6 +432,8 @@ def analyze_and_plot_simulated_results(evaluation_path, session_dir, config, dB=
     for metric in ['NMSE', 'SSIM']:
         for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
             results[metric][num_mics] = []
+
+    print("Computing sample's individual performances")
     for num_file, filename in enumerate(filenames):
         df_all = pd.read_csv(os.path.join(evaluation_path, filename))    
         plt.figure(3, figsize = (25, 12.5))
@@ -447,31 +446,34 @@ def analyze_and_plot_simulated_results(evaluation_path, session_dir, config, dB=
         for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
             res = file_results.loc[file_results['num_mics'] == num_mics]
             for num_comb in range(config['evaluation']['num_comb']):
-                #Add data for each combination
                 defin = res.loc[res['num_comb'] == num_comb]
                 results['NMSE'][num_mics].append(defin['NMSE'].values)
                 results['SSIM'][num_mics].append(defin['SSIM'].values)
 
+    print("Computing means")
     for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
         nmse = np.asarray(results['NMSE'][num_mics])
         ssim = np.asarray(results['SSIM'][num_mics])
         
-        #plot nmse mic results given all combinations
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(nmse)
         if dB == True:
           m = db(m)
         
         GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
-        
-        #plot ssmi mic results given all combinations
-        
+           
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(ssim)
         GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)
-        
-    pretty_plot(GLOBAL_NMSE, 'NMSE', evaluation_path,source = None, dB=dB)
-    pretty_plot(GLOBAL_SSIM, 'SSIM', evaluation_path,source = None, dB=False)
+
+    results_path = "".join([evaluation_path,"\\","average_performance"])
+    
+    if not os.path.exists(results_path):
+        os.mkdir(results_path)
+    
+    print("Saving plot files")
+    pretty_plot(GLOBAL_NMSE, 'NMSE', results_path,source = None, dB=dB)
+    pretty_plot(GLOBAL_SSIM, 'SSIM', results_path,source = None, dB=False)
 
 def my_plot(array,freqs):
 
@@ -536,7 +538,7 @@ def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
     plot_path: string
 
     """
-    from datetime import datetime
+
     legends = ["".join((mics," mics")) for mics in axes.get_legend_handles_labels()[-1]]
     axes.legend(legends,prop={'size': 22})
     axes.set_xscale('log')
@@ -557,12 +559,13 @@ def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
       axes.set_ylabel("".join([metric_name," ","[-]"]), fontsize=30)
     if source != None:
         axes.set_title(metric_name + ' at source position ' + str(source), fontsize=30)
-        filename = metric_name + '_at_source_position_' + str(source) + ".pdf"
+        filename = metric_name + '_at_source_position_' + str(source) + ".png"
     else:
         axes.set_title(metric_name, fontsize=30)
-        filename = metric_name +"_"+datetime.now().strftime("%d-%mT%H:%M") + ".pdf"
+        filename = "".join([metric_name,".png"])
+    
     axes.figure.savefig(os.path.join(plot_path, filename))
-    # plt.close()
+    axes.figure.show()
 
 def plot_2D(data, filepath):
     """ Plot 2D data without white margins.

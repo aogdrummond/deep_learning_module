@@ -10,13 +10,11 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from matplotlib.pyplot import cm
-from random import seed
 from skimage.measure import compare_ssim as ssim
 from keras.utils import conv_utils
 from keras import backend as K
 from keras.engine import InputSpec
-from keras.layers import Conv2D, Conv1D
+from keras.layers import Conv2D
 
 
 """ Saving/loading/checking files from disk """

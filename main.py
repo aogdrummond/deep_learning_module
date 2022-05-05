@@ -4,6 +4,7 @@
 import argparse
 import training
 import inference
+import evaluation
 
 
 def main():
@@ -13,7 +14,6 @@ def main():
     parser.add_argument('--config', default='', help='JSON-formatted file with configuration parameters')
     parser.add_argument('--mode', default='', help='The operational mode - train|sim-eval|real-eval|visualize')
     cla = parser.parse_args()
-
     if cla.config == '':
         print('Error: --config flag is required. Enter the path to a configuration file.')
 
@@ -23,16 +23,17 @@ def main():
         inference.real_data_evaluation(cla.config)
     elif cla.mode == 'train':
         training.train(cla.config)
-    elif cla.mode == "finetune":
-        training.model_finetuning(cla.config)
-    elif cla.mode == "kerastuner":
-        training.test_keras_tuner(cla.config)        
+    # elif cla.mode == "finetune":
+    #     training.model_finetuning(cla.config)        
     elif cla.mode == 'visualize':
         inference.visualize(cla.config)
     elif cla.mode == 'prediction':
         inference.predict_soundfield(cla.config)
-    elif cla.mode == "mics_visualize":
-        inference.visualize_multiple_mics(cla.config)
+    # elif cla.mode == "mics_visualize":
+    #     inference.visualize_multiple_mics(cla.config)
+    elif cla.mode == "random-result-eval":
+        # evaluation.evaluate_ssim_nmse(cla.config)
+        evaluation.plot_average_results(cla.config)
     else:
         print('Error: invalid operational mode - options: train, sim-eval, real-eval or visualize')
 

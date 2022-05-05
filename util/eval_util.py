@@ -24,7 +24,7 @@ def preprocess_df(dataframe):
     for frequency in freq:
       df = dataframe[(dataframe['freq']==frequency) & (dataframe['num_mics']== mics)]
       values_NMSE = np.array(df['NMSE'],dtype=float)
-      values_SSIM = np.array(df['SSIM'],dtype=float)    
+      values_SSIM = np.array(df['SSIM'],dtype=float)
       data_SSIM[frequency] = pd.Series(values_SSIM.mean())
       data_NMSE[frequency] = pd.Series(values_NMSE.mean())
 
@@ -38,7 +38,7 @@ def preprocess_df(dataframe):
 
     labels = data_SSIM.columns
 
-  return (dict_loss_SSIM,dict_loss_NMSE), freq, labels
+  return (dict_loss_SSIM,dict_loss_NMSE, freq, labels)
 
 
 def plot_evaluation(dicts, freq, labels,num_mics=None,path=None):
@@ -153,12 +153,12 @@ def room_properties(path,source):
     return S_planta, S, V, alfa
 
 
-def plot_training_loss(path):
+def plot_training_loss(history_path):
     """
     Plots loss and PSNR from the csv file
     from "path"
     """
-    df = pd.read_csv(path)
+    df = pd.read_csv(history_path)
     plt.figure(figsize=(10,10))
     plt.subplot(2,1,1)
     x = df["epoch"]
@@ -168,8 +168,8 @@ def plot_training_loss(path):
     plt.plot(x,y,"k",linewidth=2)
     plt.grid()
     plt.legend(["loss","val_loss"],loc=5, prop={'size': 15})
-    current_session = path.split("/")[-2]
-    plt.title(f"Training Losses ({current_session})",fontname="Times New Roman Bold")
+    current_session = history_path.split("\\")[-2]
+    plt.title(f"Training Losses ({current_session})")
     plt.ylim([0,5])
     plt.xlabel("Epoch")
     plt.subplot(2,1,2)
@@ -180,7 +180,7 @@ def plot_training_loss(path):
     plt.ylim([10,20])
     plt.grid()
     plt.legend(["PSNR","val_PSNR"],loc=5, prop={'size': 15})
-    plt.title(f"Training PSNR ({current_session})",fontname="Times New Roman Bold")
+    plt.title(f"Training PSNR ({current_session})")
     plt.xlabel("Epoch")
 
 def show_soundfields(path,

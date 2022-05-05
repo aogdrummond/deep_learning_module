@@ -2,8 +2,8 @@
 # Training.py
 
 from __future__ import division
-import sys
-sys.path.append('util')
+# import sys
+# sys.path.append('util')
 import os
 import util
 import data

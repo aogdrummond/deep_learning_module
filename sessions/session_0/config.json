@@ -30,6 +30,7 @@
         "source": 0
     },
     "prediction": {
-        "path": "C:/Users/aledr/Documents/GitHub/neural_network_module/sessions/session_0/prediction/sample/1_d_6_6_36_s_0_0_"
+        "predicted_file_path": "C:/Users/aledr/Documents/GitHub/neural_network_module/sessions/session_0/prediction/sample/1_d_6_6_36_s_0_0_",
+        "num_mics": 10
     }
 }
