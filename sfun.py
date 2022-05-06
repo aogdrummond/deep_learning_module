@@ -5,10 +5,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import warnings
 warnings.simplefilter('ignore', UserWarning)
-import sys
-import numpy as np
-import util
-from datetime import datetime
+import util.util as util
 from keras.models import Model, load_model
 from keras.optimizers import Adam
 from keras.layers import Input, Conv2D, UpSampling2D, Dropout, LeakyReLU, BatchNormalization, Activation, Lambda, Conv1D, UpSampling1D

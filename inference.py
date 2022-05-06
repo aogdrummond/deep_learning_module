@@ -1,15 +1,12 @@
 # Sound field reconstruction in rooms: inpainting meets superresolution - 17.12.2019
 # Inference.py
 
-import sys
 import os
-import util
+import util.util as util
 import sfun
 import data
 import copy
 import numpy as np
-
-# sys.path.append('util')
 
 def get_general_checkpoint_path(session_dir,number_checkpoint):
     """ Returns the path of the most recent checkpoint in session_dir.
@@ -297,8 +294,6 @@ def visualize(config_path):
 
     session_dir = config_path[:config_path.rfind('\\')+1]
 
-    # checkpoint_path = get_latest_checkpoint_path(session_dir)
-
     checkpoint_path = get_general_checkpoint_path(session_dir=session_dir,number_checkpoint=-1)
     if not checkpoint_path:
         print('Error: No checkpoint found in same directory as configuration file.')
@@ -308,13 +303,16 @@ def visualize(config_path):
 
     visualization_path = os.path.join(session_dir, 'visualization')
     if not os.path.exists(visualization_path): os.makedirs(visualization_path)
+    
+    dataset_path = config["dataset"]["path"]
 
-    filepath = os.path.join(config['dataset']['path'], 'real_soundfields','RoomB_soundfield.mat')
+    real_room_filepath = "".join([dataset_path,'/real_soundfields','/RoomB_soundfield.mat'])
 
     mask_generator = data.MaskGenerator(config['dataset']['xSamples']//config['dataset']['factor'], config['dataset']['ySamples']//config['dataset']['factor'], len(frequencies), num_mics=config['visualization']['num_mics'])
 
     # Get measured sound field
-    sf_sample = util.load_RoomB_soundfield(filepath, config['visualization']['source'])
+
+    sf_sample = util.load_RoomB_soundfield(real_room_filepath, config['visualization']['source'])
     sf_gt = np.expand_dims(copy.deepcopy(sf_sample), axis=0)
     initial_sf = np.expand_dims(sf_sample, axis=0)
 

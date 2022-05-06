@@ -33,7 +33,7 @@ def main():
     #     inference.visualize_multiple_mics(cla.config)
     elif cla.mode == "random-result-eval":
         # evaluation.evaluate_ssim_nmse(cla.config)
-        evaluation.plot_average_results(cla.config)
+        evaluation.compare_soundfields(cla.config)
     else:
         print('Error: invalid operational mode - options: train, sim-eval, real-eval or visualize')
 

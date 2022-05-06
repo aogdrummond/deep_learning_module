@@ -10,7 +10,7 @@
         "num_epochs": 10000,
         "num_steps_val": 1,
         "num_steps_train": 1,
-        "session_id": 50,
+        "session_id": 15,
         "lr": 0.0002,
         "loss": {
             "valid_weight": 1,

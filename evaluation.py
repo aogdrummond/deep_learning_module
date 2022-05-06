@@ -5,19 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 import util.util as util
-from util.eval_util import plot_training_loss, preprocess_df
-from util.util_analysis import analyze_and_plot_simulated_results
-
-def db(dict_loss):
-
-  loss = np.array(dict_loss)
-  ref = loss[~np.isnan(loss)]
-  ref = np.max(ref)/0.6
-  dict_in_dB = 20*np.log10(abs(np.array(dict_loss)/ref))
-
-  return dict_in_dB
-
-CSV_COLUMNS_NAMES=["name","num_file","xDim","yDim","m2","num_mics","num_comb","freq","NMSE","SSIM","pattern","p_real","p_predicted","p_previous"]
+from util.evaluation import preprocess_df, show_soundfields, db, CSV_COLUMNS_NAMES
 
 def evaluate_ssim_nmse(config_path:str):
     """
@@ -40,72 +28,96 @@ def evaluate_ssim_nmse(config_path:str):
     session_history_path = "".join([session_dir,"history_session_",str(config["training"]["session_id"]),".csv"])
     plot_training_loss(history_path=session_history_path)
     plot_evaluation(dataframe_preprocessed, 
-                    path = results_path)
-
-def plot_average_results(config_path):
-
+                    sample_path = results_path)
+    util.analyze_and_plot_simulated_results(evaluation_path,config,dB=True)
+    
+def compare_soundfields(config_path):
     """
     """
     config = util.load_config(config_path)
     print('Loaded configuration from: %s' % config_path)
 
     session_dir = config_path[:config_path.rfind('\\')+1]
-    evaluation_path = "".join([session_dir, 'simulated_data_evaluation\\', 'min_mics_' + str(config['evaluation']['min_mics']) +
-                                  '_max_mics_' + str(config['evaluation']['max_mics']) + '_step_mics_' +
-                                  str(config['evaluation']['step_mics'])])
+    visualization_path = "".join([session_dir,"visualization_10\\"])
     
-    analyze_and_plot_simulated_results(evaluation_path,config,dB=True)
+    show_soundfields(soundfield_path=visualization_path, 
+                    freq_list = ["33","51","112","132"])
 
+
+def plot_training_loss(history_path:str):
+    """
+    Plots loss and PSNR from the csv file
+    from "path"
+    """
+    df = pd.read_csv(history_path)
+    current_session = history_path.split("\\")[-2]
+    plt.figure(figsize=(10,10))
+    plt.subplot(2,1,1)
+    plt.plot(df["epoch"],df["loss"],"b",linewidth=2)
+    plt.plot(df["epoch"],df["val_loss"],"k",linewidth=2)
+    plt.grid()
+    plt.legend(["loss","val_loss"],loc=5, prop={'size': 15})
+    plt.title(f"Training Losses ({current_session})")
+    plt.ylim([0,5])
+    plt.xlabel("Epoch")
     
+    plt.subplot(2,1,2)
+    plt.plot(df["epoch"],df["PSNR"],"r",linewidth=2)
+    plt.plot(df["epoch"],df["val_PSNR"],"m",linewidth=2)
+    plt.grid()
+    plt.legend(["PSNR","val_PSNR"],loc=5, prop={'size': 15})
+    plt.title(f"Training PSNR ({current_session})")
+    plt.ylim([10,20])
+    plt.xlabel("Epoch")
+    individual_results_path = "".join([history_path[:history_path.rfind("\\")],"\\", 
+    "simulated_data_evaluation\\min_mics_5_max_mics_65_step_mics_15\\individual_performance\\"])
+    if not os.path.exists(individual_results_path):
+        os.mkdir(individual_results_path)
+    plt.savefig("".join([individual_results_path,"\\","session_loss_history.png"]))
 
-def plot_evaluation(preprocessed_data, 
-                    num_mics=None, 
-                    path=None):
+
+def plot_evaluation(preprocessed_data:tuple, 
+                    sample_path:str):
 
 
   dict_loss_SSIM = preprocessed_data[0]
   dict_loss_NMSE = preprocessed_data[1]
   freq = preprocessed_data[2]
-  labels = preprocessed_data[3]
-  freq = [int(f) for f in freq]
-  freq.sort()
-  freq = [str(f) for f in freq]
-  empty_array = np.empty(len(labels))    #Placeholder
-  for i, label in enumerate(labels):
-    label = int(label)
-    empty_array[i] = label
+  all_labels = preprocessed_data[3]
+  freq.sort(key=int)
+  all_labels = np.sort(all_labels.astype(int))
+  labels_idx = [0,5,9,12,15,18,21,26,31,39]
+  labels_used = [all_labels[idx] for idx in labels_idx]
 
-  labels = np.sort(empty_array.astype(int))
-  labels_idx = [0,5,9,12,15,17,19,20,31,39]
-  labels_used = [labels[idx] for idx in labels_idx]
-  #SSIM
   plt.figure(figsize=(15,12))                                       
+  
+  keys = [mic for mic in dict_loss_SSIM.keys() if mic != 'num_mics']
+  keys_leg = np.sort(np.array([int(mics) for mics in keys]))
+  legend = [f"{n} mics" for n in keys_leg]
+  session = sample_path.split("\\")[-4]
+  sample_name = sample_path.split("\\")[-1]
+  evaluation_path = sample_path[:sample_path.rfind("\\")+1]
+  individual_results_path = "".join([evaluation_path,"\\","individual_performance"])
+  if not os.path.exists(individual_results_path):
+        os.mkdir(individual_results_path)
+
   plt.subplot(211)
 
-  keys = [mic for mic in dict_loss_SSIM.keys() if mic != 'num_mics']
-  keys_leg = np.sort(np.array([int(elemento) for elemento in keys]))
   for mic in keys:
     plotted_SSIM= []
     plotted_SSIM.extend(dict_loss_SSIM[mic][10:].tolist())
     plotted_SSIM.extend(dict_loss_SSIM[mic][:10].tolist())
     plt.plot(freq,plotted_SSIM,markevery=1,marker="o")
 
-  legend = []
-  keys_leg = np.sort(np.array([int(elemento) for elemento in keys]))
-  for n in keys_leg:
-    legend.append(f'{n} mics')
+
   plt.xticks(ticks=labels_idx,labels=labels_used,fontsize=20)
   plt.yticks(fontsize=20)
   plt.xlabel('Frequency [Hz]',fontsize=10)
   plt.ylabel('MSSIM',fontsize=30)
-  if path != None:
-    session = path.split("\\")[-4]
-    sample = path.split("\\")[-1]
-    plt.title(f'{session.capitalize()} | sample: {sample}',fontsize=20)
+  plt.title(f'{session.capitalize()} | sample: {sample_name}',fontsize=20)
   plt.legend(legend,fontsize=15)
   plt.grid(color='k',linewidth=1)
 
-  #NMSE
   plt.subplot(212)
 
   for mic in keys:
@@ -118,9 +130,11 @@ def plot_evaluation(preprocessed_data,
   plt.yticks(fontsize=20)
   plt.xlabel('Frequency [Hz]',fontsize=10)
   plt.ylabel('NMSE(dB)',fontsize=25)
+  plt.title('',fontsize=15)
   plt.legend(legend,fontsize=15)
   plt.grid(color='k',linewidth=1)
-  plt.title('',fontsize=15)
+  
+  plt.savefig("".join([individual_results_path,"\\",sample_path.split("\\")[-1].split(".")[-2],".png"]))
   plt.show()
 
 
