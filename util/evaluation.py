@@ -105,20 +105,19 @@ def compare_soundfields_to_num_mics(root_path:str,freq:list,n_mics:list=[]):
 
 
 def show_soundfields(soundfield_path:str,
-                     freq_list:list,
-                     figsize:tuple = (9.6,7.2)):
+                     freq_shown:list,
+                     figsize:tuple = (6.4,4.8)):
 
   soundfield_files = os.listdir(soundfield_path)
-   
-  freq_list = sorted(freq_list,key=int)
+  freq_list = sorted(freq_shown,key=int)
   GT = []
   Pred = []
   for f in freq_list:
     
     for filename in soundfield_files:
-      if "Ground_Truth" in filename and filename.startswith(f):
+      if "Ground_Truth" in filename and filename.startswith(str(f)):
         GT.append(filename)
-      if "Pred" in filename and filename.startswith(f):
+      if "Pred" in filename and filename.startswith(str(f)):
         Pred.append(filename)
 
   im_per_freq = []

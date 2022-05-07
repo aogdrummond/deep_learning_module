@@ -301,10 +301,10 @@ def visualize(config_path):
 
     model = sfun.SFUN(config, train_bn=False)
 
-    visualization_path = os.path.join(session_dir, 'visualization')
+    visualization_path = "".join([session_dir,"\\", f'visualization_{config["visualization"]["num_mics"]}_mics\\'])
     if not os.path.exists(visualization_path): os.makedirs(visualization_path)
     
-    dataset_path = config["dataset"]["path"]
+    dataset_path = os.path.join(config["storage"]["path"],config["dataset"]["name"])
 
     real_room_filepath = "".join([dataset_path,'/real_soundfields','/RoomB_soundfield.mat'])
 
@@ -320,7 +320,7 @@ def visualize(config_path):
     mask = mask_generator.sample()
     mask = np.expand_dims(mask, axis=0)
 
-    # preprocessing
+    # Preprocessing
     irregular_sf, mask = util.preprocessing(config['dataset']['factor'], initial_sf, mask)
 
     # Save range to allow colorbar
@@ -452,7 +452,7 @@ def predict_soundfield(config_path):
     if not os.path.exists(visualization_path): os.makedirs(visualization_path)
 
     filepath = config["prediction"]["predicted_file_path"]
-
+    #Implementar tratamento de erro caso dê ""
     mask_generator = data.MaskGenerator(config['dataset']['xSamples']//config['dataset']['factor'], config['dataset']['ySamples']//config['dataset']['factor'], len(frequencies), num_mics=config['prediction']['num_mics'])
 
     # Get measured sound field

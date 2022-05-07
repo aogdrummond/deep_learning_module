@@ -3,7 +3,7 @@
 
 import os
 import numpy as np
-import util
+import util.util as util
 import copy
 import gc
 import collections
@@ -22,7 +22,7 @@ class Dataset():
         """
 
         self.config = config
-        self.path = self.config['dataset']['path']
+        self.path = "".join([self.config['storage']['path'],"/datasets/",self.config['dataset']['name']])
         self.file_paths = {'train': [], 'val': []}
         self.soundfields = {'train': [], 'val': []}
         self.batch_size = self.config['training']['batch_size']

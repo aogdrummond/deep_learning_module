@@ -38,10 +38,12 @@ def compare_soundfields(config_path):
     print('Loaded configuration from: %s' % config_path)
 
     session_dir = config_path[:config_path.rfind('\\')+1]
-    visualization_path = "".join([session_dir,"visualization_10\\"])
+
+    num_mics = config["visualization"]["num_mics"]
+    visualization_path = "".join([session_dir,f"visualization_{num_mics}_mics\\"])
     
     show_soundfields(soundfield_path=visualization_path, 
-                    freq_list = ["33","51","112","132"])
+                    freq_shown = config["evaluation"]["frequencies"])
 
 
 def plot_training_loss(history_path:str):

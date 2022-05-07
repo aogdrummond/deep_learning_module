@@ -5,7 +5,7 @@ from __future__ import division
 # import sys
 # sys.path.append('util')
 import os
-import util
+import util.util as util
 import data
 import sfun
 
@@ -14,10 +14,17 @@ def create_new_session(config):
     Args:
     config: dict, session configuration parameters
     """
+    sessions_storage_path = "".join([config["storage"]["path"],"/","neural_network_sessions"])
 
-    if not os.path.exists('sessions'): os.mkdir('sessions')
-    config['training']['session_dir'] = os.path.join('sessions', 'session_' + str(config['training']['session_id']))
-    if not os.path.exists(config['training']['session_dir']): os.mkdir(config['training']['session_dir'])
+    if "session_dir" not in config["training"]:
+      session_dir_path = "".join([sessions_storage_path,"/","session_",str(config["training"]["session_id"])])
+      config["training"]["session_dir"] = session_dir_path
+      if not os.path.exists(session_dir_path): os.mkdir(session_dir_path)
+      util.save_config(config["training"]["session_dir"],config)
+    
+    session_path = os.path.join(config["storage"]["path"],config["training"]["session_dir"])
+    
+    if not os.path.exists(session_path): os.mkdir(session_path)
 
 def train(config_path):
     """ Trains a model
@@ -34,8 +41,9 @@ def train(config_path):
     config = util.load_config(config_path)
     print('Loaded configuration from: %s' % config_path)
 
-    # Create session directory
-    if 'session_dir' not in config['training'] or os.path.exists(config['training']['session_dir']): create_new_session(config)
+    if "session_dir" not in config["training"] : create_new_session(config)
+    storage_session_path = "".join([config['storage']['path'],"/",config['training']['session_dir']])
+    if not os.path.exists(storage_session_path): create_new_session(config)
 
     model = sfun.SFUN(config)
     dataset = data.Dataset(config).load_dataset()
