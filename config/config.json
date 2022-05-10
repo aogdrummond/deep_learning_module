@@ -1,6 +1,6 @@
 {
     "storage": {
-        "path": "C:/Users/aledr/Documents/GitHub/soundfields_storage"
+        "path": "C:\\Users\\aledr\\Documents\\GitHub\\soundfields_storage"
     },
     "dataset": {
         "factor": 4,
@@ -31,7 +31,7 @@
         "num_epochs": 3,
         "num_steps_train": 1,
         "num_steps_val": 1,
-        "session_id": 14
+        "session_id": 16
     },
     "visualization": {
         "num_mics": 10,

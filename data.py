@@ -22,7 +22,7 @@ class Dataset():
         """
 
         self.config = config
-        self.path = "".join([self.config['storage']['path'],"/datasets/",self.config['dataset']['name']])
+        self.path = os.path.join(self.config['storage']['path'],"datasets",self.config['dataset']['name'])
         self.file_paths = {'train': [], 'val': []}
         self.soundfields = {'train': [], 'val': []}
         self.batch_size = self.config['training']['batch_size']
@@ -36,13 +36,14 @@ class Dataset():
         """ Load Dataset. """
 
         print('\nLoading Simulated Sound Field Dataset...')
-        for set in ['train', 'val']:
-            current_directory = "".join([self.path,"/", 'simulated_soundfields',"/", set])
+        for set_ in ['train', 'val']:
+            
+            current_directory = os.path.join(self.path,'simulated_soundfields', set_)
 
             soundfields, file_paths = self.load_directory(current_directory)
 
-            self.file_paths[set] = file_paths
-            self.soundfields[set] = soundfields
+            self.file_paths[set_] = file_paths
+            self.soundfields[set_] = soundfields
     
 
         return self

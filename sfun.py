@@ -36,16 +36,15 @@ class SFUN(object):
         """Creates a SFUN object.
             Returns: keras model
         """
-        self.checkpoints_path = "".join([self._config['training']['session_dir'],"/",
-                                         'checkpoints'])
-        session_dir_path = "".join([self._config['training']['session_dir']])
+        self.checkpoints_path = os.path.join(self._config['training']['session_dir'],'checkpoints')
+        session_dir_path = os.path.join(self._config['training']['session_dir'])
         if not os.path.exists(self.checkpoints_path):
             
             if not os.path.exists(session_dir_path):
                 os.mkdir(session_dir_path)
             os.mkdir(self.checkpoints_path)
         
-        self.history_filename = 'history_' + self._config['training']['session_dir'].split("/")[-1] + '.csv'
+        self.history_filename = "".join(['history_',self._config['training']['session_dir'].split("\\")[-1],'.csv'])
 
         self.model, inputs_mask = self.build_model(train_bn=self.train_bn)
         self.compile_sfun(self.model, inputs_mask, self._config['training']['lr'])

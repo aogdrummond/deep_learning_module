@@ -16,27 +16,20 @@ def create_new_session(config):
     Args:
     config: dict, session configuration parameters
     """
-    sessions_storage_path = "".join(
-        [config["storage"]["path"], "/", "neural_network_sessions"]
-    )
+    sessions_storage_path = os.path.join(config["storage"]["path"],
+                                         "neural_network_sessions")
 
     if "session_dir" not in config["training"]:
-        session_dir_path = "".join(
-            [
-                sessions_storage_path,
-                "/",
-                "session_",
-                str(config["training"]["session_id"]),
-            ]
-        )
+
+        current_session = "".join(["session_",str(config["training"]["session_id"])])
+        session_dir_path = os.path.join(sessions_storage_path,current_session)
         config["training"]["session_dir"] = session_dir_path
+        
         if not os.path.exists(session_dir_path):
             os.mkdir(session_dir_path)
         util.save_config(config["training"]["session_dir"], config)
 
-    session_path = os.path.join(
-        config["storage"]["path"], config["training"]["session_dir"]
-    )
+    session_path = os.path.join(config["storage"]["path"], config["training"]["session_dir"])
 
     if not os.path.exists(session_path):
         os.mkdir(session_path)
@@ -59,9 +52,8 @@ def train(config_path):
 
     if "session_dir" not in config["training"]:
         create_new_session(config)
-    storage_session_path = "".join(
-        [config["storage"]["path"], "/", config["training"]["session_dir"]]
-    )
+    storage_session_path = os.path.join(config["storage"]["path"], 
+                                        config["training"]["session_dir"])
     if not os.path.exists(storage_session_path):
         create_new_session(config)
 

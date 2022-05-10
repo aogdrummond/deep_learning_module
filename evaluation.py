@@ -16,16 +16,20 @@ def evaluate_ssim_nmse(config_path:str):
     """
     config = util.load_config(config_path)
     print('Loaded configuration from: %s' % config_path)
-
     session_dir = config_path[:config_path.rfind('\\')+1]
-    evaluation_path = "".join([session_dir, 'simulated_data_evaluation\\', 'min_mics_' + str(config['evaluation']['min_mics']) +
+
+    evaluation_path = os.path.join(session_dir, 'simulated_data_evaluation_quad_0', 'min_mics_' + str(config['evaluation']['min_mics']) +
                                   '_max_mics_' + str(config['evaluation']['max_mics']) + '_step_mics_' +
-                                  str(config['evaluation']['step_mics'])])
+                                  str(config['evaluation']['step_mics']))
+
+    if not os.path.exists(evaluation_path): os.mkdir(evaluation_path)
+
     results_file_name = random.choice(os.listdir(evaluation_path))
-    results_path = "".join([evaluation_path,"\\",results_file_name])
+    results_path = os.path.join(evaluation_path,results_file_name)
     results_dataframe = pd.read_csv(results_path, names=CSV_COLUMNS_NAMES)
     dataframe_preprocessed = preprocess_df(results_dataframe)
-    session_history_path = "".join([session_dir,"history_session_",str(config["training"]["session_id"]),".csv"])
+    history_file = "".join(["history_session_",str(config["training"]["session_id"]),".csv"])
+    session_history_path = os.path.join(session_dir,history_file)
     plot_training_loss(history_path=session_history_path)
     plot_evaluation(dataframe_preprocessed, 
                     sample_path = results_path)
@@ -38,9 +42,9 @@ def compare_soundfields(config_path):
     print('Loaded configuration from: %s' % config_path)
 
     session_dir = config_path[:config_path.rfind('\\')+1]
-
+    
     num_mics = config["visualization"]["num_mics"]
-    visualization_path = "".join([session_dir,f"visualization_{num_mics}_mics\\"])
+    visualization_path = os.path.join(session_dir,f"visualization_{num_mics}_mics/")
     
     show_soundfields(soundfield_path=visualization_path, 
                     freq_shown = config["evaluation"]["frequencies"])
@@ -51,6 +55,7 @@ def plot_training_loss(history_path:str):
     Plots loss and PSNR from the csv file
     from "path"
     """
+    #OBTER CONFIG PARA PARSEAR O NUM_MICS PARA O FOLDER
     df = pd.read_csv(history_path)
     current_session = history_path.split("\\")[-2]
     plt.figure(figsize=(10,10))
@@ -71,11 +76,12 @@ def plot_training_loss(history_path:str):
     plt.title(f"Training PSNR ({current_session})")
     plt.ylim([10,20])
     plt.xlabel("Epoch")
-    individual_results_path = "".join([history_path[:history_path.rfind("\\")],"\\", 
-    "simulated_data_evaluation\\min_mics_5_max_mics_65_step_mics_15\\individual_performance\\"])
+    individual_results_path = os.path.join(history_path[:history_path.rfind("\\")], 
+    "simulated_data_evaluation","min_mics_5_max_mics_15_step_mics_5","individual_performance")
+
     if not os.path.exists(individual_results_path):
         os.mkdir(individual_results_path)
-    plt.savefig("".join([individual_results_path,"\\","session_loss_history.png"]))
+    plt.savefig(os.path.join(individual_results_path,"session_loss_history.png"))
 
 
 def plot_evaluation(preprocessed_data:tuple, 
@@ -99,9 +105,10 @@ def plot_evaluation(preprocessed_data:tuple,
   session = sample_path.split("\\")[-4]
   sample_name = sample_path.split("\\")[-1]
   evaluation_path = sample_path[:sample_path.rfind("\\")+1]
-  individual_results_path = "".join([evaluation_path,"\\","individual_performance"])
-  if not os.path.exists(individual_results_path):
-        os.mkdir(individual_results_path)
+  individual_results_folder = os.path.join(evaluation_path,"individual_performance")
+  
+  if not os.path.exists(individual_results_folder):
+        os.mkdir(individual_results_folder)
 
   plt.subplot(211)
 
@@ -135,8 +142,8 @@ def plot_evaluation(preprocessed_data:tuple,
   plt.title('',fontsize=15)
   plt.legend(legend,fontsize=15)
   plt.grid(color='k',linewidth=1)
-  
-  plt.savefig("".join([individual_results_path,"\\",sample_path.split("\\")[-1].split(".")[-2],".png"]))
+  figure_name = "".join([sample_path.split("\\")[-1].split(".")[-2],".png"])
+  plt.savefig(os.path.join(individual_results_folder,figure_name))
   plt.show()
 
 

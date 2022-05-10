@@ -335,10 +335,8 @@ def simulated_data_evaluation(config_path):
 
     if not os.path.exists(evaluation_path):
         os.makedirs(evaluation_path)
-
-    test_path = "".join(
-        [config["dataset"]["path"], "/", "simulated_soundfields", "/", "test"]
-    )
+    
+    test_path = os.path.join(config["storage"]["path"],"datasets",config["dataset"]["name"],"simulated_soundfields", "test")
 
     filenames = get_test_filenames(test_path)
 
@@ -421,32 +419,19 @@ def visualize(config_path):
 
     model = sfun.SFUN(config, train_bn=False)
 
-    visualization_path = "".join(
-        [
-            session_dir,
-            "\\",
-            f'visualization_{config["visualization"]["num_mics"]}_mics\\',
-        ]
-    )
+    visualization_path = os.path.join(session_dir,'visualization')
     if not os.path.exists(visualization_path):
         os.makedirs(visualization_path)
 
-    dataset_path = os.path.join(config["storage"]["path"], config["dataset"]["name"])
+    dataset_path = os.path.join(config["storage"]["path"],"datasets", config["dataset"]["name"])
+    real_room_filepath =  os.path.join(dataset_path,"real_soundfields","RoomB_soundfield.mat")
 
-    real_room_filepath = "".join(
-        [dataset_path, "/real_soundfields", "/RoomB_soundfield.mat"]
-    )
     if not os.path.exists(real_room_filepath):
+        
         os.mkdir("".join([dataset_path, "/real_soundfields"]))
-        source_path = "".join(
-            [
-                config["storage"]["path"],
-                "/datasets/real_soundfield_sample/RoomB_soundfield.mat",
-            ]
-        )
-        destination_path = "".join(
-            [dataset_path, "/real_soundfields/RoomB_soundfield.mat"]
-        )
+        source_path = os.path.join(config["storage"]["path"],"datasets","real_soundfield_sample","RoomB_soundfield.mat")
+        destination_path = os.path.join(dataset_path,"real_soundfields","RoomB_soundfield.mat")
+        
         os.system(f"copy {source_path} {destination_path}")
 
     mask_generator = data.MaskGenerator(
