@@ -10,13 +10,11 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from matplotlib.pyplot import cm
-from random import seed
 from skimage.measure import compare_ssim as ssim
 from keras.utils import conv_utils
 from keras import backend as K
 from keras.engine import InputSpec
-from keras.layers import Conv2D, Conv1D
+from keras.layers import Conv2D
 
 
 """ Saving/loading/checking files from disk """
@@ -86,9 +84,6 @@ def load_soundfield(filepath, freq):
     f_response = mat['AbsFrequencyResponse']
     f_response = np.transpose(f_response, (1, 0, 2))
     soundfield = f_response[:,:,frequencies]
-
-    #INDEXAÇÃO FEMDER
-    # soundfield = f_response[:, :, frequencies-30] # frequencias vao do 0 ao 150. Matlab não utiliza idx 0, por isso somar 1
 
     return soundfield
 
@@ -451,7 +446,7 @@ def analyze_and_plot_real_results(results_filepath, config):
         pretty_plot(GLOBAL_SSIM, 'SSIM', plot_path, source)
 
 
-def analyze_and_plot_simulated_results(evaluation_path, session_dir, config):
+def analyze_and_plot_simulated_results(evaluation_path, config, dB=True):
     """ Read simulated results .csv files, analyze data, and plot.
 
         Args:
@@ -472,6 +467,8 @@ def analyze_and_plot_simulated_results(evaluation_path, session_dir, config):
     for metric in ['NMSE', 'SSIM']:
         for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
             results[metric][num_mics] = []
+
+    print("Computing sample's individual performances")
     for num_file, filename in enumerate(filenames):
         df_all = pd.read_csv(os.path.join(evaluation_path, filename))    
         plt.figure(3, figsize = (25, 12.5))
@@ -484,41 +481,41 @@ def analyze_and_plot_simulated_results(evaluation_path, session_dir, config):
         for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
             res = file_results.loc[file_results['num_mics'] == num_mics]
             for num_comb in range(config['evaluation']['num_comb']):
-                #Add data for each combination
                 defin = res.loc[res['num_comb'] == num_comb]
                 results['NMSE'][num_mics].append(defin['NMSE'].values)
                 results['SSIM'][num_mics].append(defin['SSIM'].values)
 
+    print("Computing means")
     for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
         nmse = np.asarray(results['NMSE'][num_mics])
         ssim = np.asarray(results['SSIM'][num_mics])
-
-        #plot nmse mic results given all combinations
+        
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(nmse)
-        m = db(m)
+        if dB == True:
+          m = db(m)
+        
         GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
-
-        #plot ssmi mic results given all combinations
+           
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(ssim)
-        
         GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)
-    pretty_plot(GLOBAL_NMSE, 'NMSE', evaluation_path)
-    pretty_plot(GLOBAL_SSIM, 'SSIM', evaluation_path)
 
-def my_plot(array,freqs):
-
-  plt.plot(array)
-  plt.xlabel("Frequency")
-  plt.ylabel("NMSE(dB)")
-  plt.grid()
-  plt.show()
+    results_path = "".join([evaluation_path,"\\","average_performance"])
+    
+    if not os.path.exists(results_path):
+        os.mkdir(results_path)
+    
+    print("Saving plot files")
+    pretty_plot(GLOBAL_NMSE, 'NMSE', results_path,source = None, dB=dB)
+    pretty_plot(GLOBAL_SSIM, 'SSIM', results_path,source = None, dB=False)
 
 def db(array):
 
+  CONSTANTE_REF = 0.6
+
   ref = array[~np.isnan(array)]
-  ref = np.max(ref)
+  ref = np.max(ref)/CONSTANTE_REF
   array_in_dB = 20*np.log10(abs(array/ref))
 
   return array_in_dB
@@ -555,13 +552,11 @@ def plot_mean_and_CI(axes, mean, lb, ub, label, freqs, linestyle='-'):
 
         """
 
-    # axes.fill_between(freqs, ub, lb, alpha=.25)
-    # mean = db(mean)
     axes.plot(freqs, mean, label=label, marker = 'o', linestyle=linestyle)
 
     return axes
 
-def pretty_plot(axes, metric_name, plot_path, source=None):
+def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
     """ Set plot parameters and save plot to svg file.
 
     Args:
@@ -571,29 +566,33 @@ def pretty_plot(axes, metric_name, plot_path, source=None):
 
     """
 
-    axes.legend(prop={'size': 15})
+    legends = ["".join((mics," mics")) for mics in axes.get_legend_handles_labels()[-1]]
+    axes.legend(legends,prop={'size': 22})
     axes.set_xscale('log')
+
     axes.xaxis.set_minor_formatter(mticker.ScalarFormatter())
     axes.xaxis.set_major_formatter(mticker.ScalarFormatter())
     for tick in axes.yaxis.get_major_ticks():
-        tick.label.set_fontsize(20)
+        tick.label.set_fontsize(30)
     for tick in axes.xaxis.get_major_ticks():
-        tick.label.set_fontsize(20)
+        tick.label.set_fontsize(30)
     for tick in axes.xaxis.get_minor_ticks():
-        tick.label.set_fontsize(20)
+        tick.label.set_fontsize(30)
     axes.grid(True,which="both",ls="--",c='gray')
-    axes.set_xlabel('Frequency', fontsize=30)
-    axes.set_ylabel(metric_name, fontsize=30)
-    # axes.set_ylim(-100, 100)
+    axes.set_xlabel('Frequency [Hz]', fontsize=30)
+    if dB:
+      axes.set_ylabel("".join([metric_name," ","(dB)"]), fontsize=30)
+    else:
+      axes.set_ylabel("".join([metric_name," ","[-]"]), fontsize=30)
     if source != None:
         axes.set_title(metric_name + ' at source position ' + str(source), fontsize=30)
-        filename = metric_name + '_at_source_position_' + str(source) + ".svg"
+        filename = metric_name + '_at_source_position_' + str(source) + ".png"
     else:
         axes.set_title(metric_name, fontsize=30)
-        filename = metric_name + ".png"
-    # axes.figure.savefig(os.path.join(plot_path, filename))
-    plt.show()
-    plt.close()
+        filename = "".join([metric_name,".png"])
+    
+    axes.figure.savefig(os.path.join(plot_path, filename))
+    axes.figure.show()
 
 def plot_2D(data, filepath):
     """ Plot 2D data without white margins.
@@ -615,16 +614,15 @@ def plot_2D(data, filepath):
     plt.close()
 
 """ Keras utility functions """
+
 # Code adopted from https://github.com/MathiasGruber/PConv-Keras
 
 class PConv2D(Conv2D):
     def __init__(self, *args, **kwargs):
         """Set PConv2D parameters.
-
             Args:
             config: dict
             train_bn: boolean
-
         """
 
         super().__init__(*args, **kwargs)
@@ -632,10 +630,8 @@ class PConv2D(Conv2D):
 
     def build(self, input_shape):
         """Define PConv2D layer's weights. Adapted from Keras _Conv() layer.
-
         Args:
         input_shape: list
-
         """
 
         if self.data_format == 'channels_first':
@@ -679,12 +675,9 @@ class PConv2D(Conv2D):
 
     def call(self, inputs, mask=None):
         """Define PConv2D layer's logic.
-
         Args:
         inputs: list=[K.tensor, K.tensor]
-
         Returns: list=[K.tensor, K.tensor]
-
         """
 
         # Both sound field and mask must be supplied
@@ -740,12 +733,9 @@ class PConv2D(Conv2D):
 
     def compute_output_shape(self, input_shape):
         """Define PConv2D layer's shape transformation logic.
-
         Args:
         input_shape: list
-
         Returns: list
-
         """
 
         if self.data_format == 'channels_last':
@@ -774,4 +764,3 @@ class PConv2D(Conv2D):
                 new_space.append(new_dim)
             new_shape = (input_shape[0], self.filters) + tuple(new_space)
             return [new_shape, new_shape]
-

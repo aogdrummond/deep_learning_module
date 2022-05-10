@@ -10,13 +10,9 @@ import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-from matplotlib.pyplot import cm
-from random import seed
 from skimage.measure import compare_ssim as ssim
-from keras.utils import conv_utils
-from keras import backend as K
+from datetime import datetime
 
-CONSTANTE_REF = 0.6
 """ Saving/loading/checking files from disk """
 
 def load_config(config_filepath):
@@ -83,9 +79,7 @@ def load_soundfield(filepath, freq):
     mat = scipy.io.loadmat(filepath)
     f_response = mat['AbsFrequencyResponse']
     f_response = np.transpose(f_response, (1, 0, 2))
-    # import pdb
-    # pdb.set_trace()
-    soundfield = f_response[:, :, frequencies] # frequencias vao do 0 ao 150. Matlab não utiliza idx 0, por isso somar 1
+    soundfield = f_response[:, :, frequencies]
     return soundfield
     
 def load_RoomB_soundfield(filepath, source_position):
@@ -413,8 +407,7 @@ def analyze_and_plot_real_results(results_filepath, config):
         pretty_plot(GLOBAL_NMSE, 'NMSE', plot_path, source)
         pretty_plot(GLOBAL_SSIM, 'SSIM', plot_path, source)
 
-
-def analyze_and_plot_simulated_results(evaluation_path, session_dir, config, dB=True):
+def analyze_and_plot_simulated_results(evaluation_path, config, dB=True):
     """ Read simulated results .csv files, analyze data, and plot.
 
         Args:
@@ -435,6 +428,8 @@ def analyze_and_plot_simulated_results(evaluation_path, session_dir, config, dB=
     for metric in ['NMSE', 'SSIM']:
         for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
             results[metric][num_mics] = []
+
+    print("Computing sample's individual performances")
     for num_file, filename in enumerate(filenames):
         df_all = pd.read_csv(os.path.join(evaluation_path, filename))    
         plt.figure(3, figsize = (25, 12.5))
@@ -447,44 +442,41 @@ def analyze_and_plot_simulated_results(evaluation_path, session_dir, config, dB=
         for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
             res = file_results.loc[file_results['num_mics'] == num_mics]
             for num_comb in range(config['evaluation']['num_comb']):
-                #Add data for each combination
                 defin = res.loc[res['num_comb'] == num_comb]
                 results['NMSE'][num_mics].append(defin['NMSE'].values)
                 results['SSIM'][num_mics].append(defin['SSIM'].values)
 
+    print("Computing means")
     for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
         nmse = np.asarray(results['NMSE'][num_mics])
         ssim = np.asarray(results['SSIM'][num_mics])
         
-        #plot nmse mic results given all combinations
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(nmse)
         if dB == True:
           m = db(m)
         
         GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
-        
-        #plot ssmi mic results given all combinations
-        
+           
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(ssim)
         GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)
-        
-    pretty_plot(GLOBAL_NMSE, 'NMSE', evaluation_path,source = None, dB=dB)
-    pretty_plot(GLOBAL_SSIM, 'SSIM', evaluation_path,source = None, dB=False)
 
-def my_plot(array,freqs):
+    results_path = "".join([evaluation_path,"\\","average_performance"])
+    
+    if not os.path.exists(results_path):
+        os.mkdir(results_path)
+    
+    print("Saving plot files")
+    pretty_plot(GLOBAL_NMSE, 'NMSE', results_path,source = None, dB=dB)
+    pretty_plot(GLOBAL_SSIM, 'SSIM', results_path,source = None, dB=False)
 
-  plt.plot(array)
-  plt.xlabel("Frequency")
-  plt.ylabel("NMSE(dB)")
-  plt.grid()
-  plt.show()
+def db(array:np.array):
 
-def db(array):
+  CONSTANT_REF = 0.6
 
   ref = array[~np.isnan(array)]
-  ref = np.max(ref)/CONSTANTE_REF
+  ref = np.max(ref)/CONSTANT_REF
   array_in_dB = 20*np.log10(abs(array/ref))
 
   return array_in_dB
@@ -521,8 +513,6 @@ def plot_mean_and_CI(axes, mean, lb, ub, label, freqs, linestyle='-'):
 
         """
 
-    # axes.fill_between(freqs, ub, lb, alpha=.25)
-    # mean = db(mean)
     axes.plot(freqs, mean, label=label, marker = 'o', linestyle=linestyle)
 
     return axes
@@ -536,7 +526,7 @@ def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
     plot_path: string
 
     """
-    from datetime import datetime
+
     legends = ["".join((mics," mics")) for mics in axes.get_legend_handles_labels()[-1]]
     axes.legend(legends,prop={'size': 22})
     axes.set_xscale('log')
@@ -557,12 +547,13 @@ def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
       axes.set_ylabel("".join([metric_name," ","[-]"]), fontsize=30)
     if source != None:
         axes.set_title(metric_name + ' at source position ' + str(source), fontsize=30)
-        filename = metric_name + '_at_source_position_' + str(source) + ".pdf"
+        filename = metric_name + '_at_source_position_' + str(source) + ".png"
     else:
         axes.set_title(metric_name, fontsize=30)
-        filename = metric_name +"_"+datetime.now().strftime("%d-%mT%H:%M") + ".pdf"
+        filename = "".join([metric_name,".png"])
+    
     axes.figure.savefig(os.path.join(plot_path, filename))
-    # plt.close()
+    axes.figure.show()
 
 def plot_2D(data, filepath):
     """ Plot 2D data without white margins.
@@ -582,165 +573,3 @@ def plot_2D(data, filepath):
     plt.margins(0,0)
     plt.savefig(filepath, bbox_inches='tight', pad_inches=0)
     plt.close()
-
-""" Keras utility functions """
-# Code adopted from https://github.com/MathiasGruber/PConv-Keras
-
-# class PConv2D(Conv2D):
-#     def __init__(self, *args, **kwargs):
-#         """Set PConv2D parameters.
-
-#             Args:
-#             config: dict
-#             train_bn: boolean
-
-#         """
-
-#         super().__init__(*args, **kwargs)
-#         self.input_spec = [InputSpec(ndim=4), InputSpec(ndim=4)]
-
-#     def build(self, input_shape):
-#         """Define PConv2D layer's weights. Adapted from Keras _Conv() layer.
-
-#         Args:
-#         input_shape: list
-
-#         """
-
-#         if self.data_format == 'channels_first':
-#             channel_axis = 1
-#         else:
-#             channel_axis = -1
-
-#         if input_shape[0][channel_axis] is None:
-#             raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
-
-#         self.input_dim = input_shape[0][channel_axis]
-
-#         # Sound field kernel
-#         kernel_shape = self.kernel_size + (self.input_dim, self.filters)
-#         self.kernel = self.add_weight(shape=kernel_shape,
-#                                       initializer=self.kernel_initializer,
-#                                       name='sf_kernel',
-#                                       regularizer=self.kernel_regularizer,
-#                                       constraint=self.kernel_constraint)
-#         # Mask kernel
-#         self.kernel_mask = K.ones(shape=self.kernel_size + (self.input_dim, self.filters))
-
-#         # Calculate padding size to achieve zero-padding
-#         self.pconv_padding = (
-#             (int((self.kernel_size[0]-1)/2), int((self.kernel_size[0]-1)/2)),
-#             (int((self.kernel_size[0]-1)/2), int((self.kernel_size[0]-1)/2)),
-#         )
-
-#         # Window size - used for normalization
-#         self.window_size = self.kernel_size[0] * self.kernel_size[1]
-
-#         if self.use_bias:
-#             self.bias = self.add_weight(shape=(self.filters,),
-#                                         initializer=self.bias_initializer,
-#                                         name='bias',
-#                                         regularizer=self.bias_regularizer,
-#                                         constraint=self.bias_constraint)
-#         else:
-#             self.bias = None
-#         self.built = True
-
-#     def call(self, inputs, mask=None):
-#         """Define PConv2D layer's logic.
-
-#         Args:
-#         inputs: list=[K.tensor, K.tensor]
-
-#         Returns: list=[K.tensor, K.tensor]
-
-#         """
-
-#         # Both sound field and mask must be supplied
-#         if type(inputs) is not list or len(inputs) != 2:
-#             raise Exception('PartialConvolution2D must be called on a list of two tensors [sf, mask]. Instead got: ' + str(inputs))
-
-#         # Padding done explicitly so that padding becomes part of the masked partial convolution
-#         sfs = K.spatial_2d_padding(inputs[0], self.pconv_padding, self.data_format)
-#         masks = K.spatial_2d_padding(inputs[1], self.pconv_padding, self.data_format)
-
-#         # Apply convolutions to mask
-#         mask_output = K.conv2d(
-#             masks, self.kernel_mask,
-#             strides=self.strides,
-#             padding='valid',
-#             data_format=self.data_format,
-#             dilation_rate=self.dilation_rate
-#         )
-
-#         # Apply convolutions to sound field
-#         sf_output = K.conv2d(
-#             (sfs*masks), self.kernel,
-#             strides=self.strides,
-#             padding='valid',
-#             data_format=self.data_format,
-#             dilation_rate=self.dilation_rate
-#         )
-
-#         # Calculate the mask ratio on each psoition in the output mask
-#         mask_ratio = self.window_size / (mask_output + 1e-8)
-
-#         # Clip output to be between 0 and 1
-#         mask_output = K.clip(mask_output, 0, 1)
-
-#         # Remove ratio values where there are holes
-#         mask_ratio = mask_ratio * mask_output
-
-#         # Normalize sound field output
-#         sf_output = sf_output * mask_ratio
-
-#         # Apply bias only to the sound field (if chosen to do so)
-#         if self.use_bias:
-#             sf_output = K.bias_add(
-#                 sf_output,
-#                 self.bias,
-#                 data_format=self.data_format)
-
-#         # Apply activations on the sound field
-#         if self.activation is not None:
-#             sf_output = self.activation(sf_output)
-
-#         return [sf_output, mask_output]
-
-#     def compute_output_shape(self, input_shape):
-#         """Define PConv2D layer's shape transformation logic.
-
-#         Args:
-#         input_shape: list
-
-#         Returns: list
-
-#         """
-
-#         if self.data_format == 'channels_last':
-#             space = input_shape[0][1:-1]
-#             new_space = []
-#             for i in range(len(space)):
-#                 new_dim = conv_utils.conv_output_length(
-#                     space[i],
-#                     self.kernel_size[i],
-#                     padding='same',
-#                     stride=self.strides[i],
-#                     dilation=self.dilation_rate[i])
-#                 new_space.append(new_dim)
-#             new_shape = (input_shape[0][0],) + tuple(new_space) + (self.filters,)
-#             return [new_shape, new_shape]
-#         if self.data_format == 'channels_first':
-#             space = input_shape[2:]
-#             new_space = []
-#             for i in range(len(space)):
-#                 new_dim = conv_utils.conv_output_length(
-#                     space[i],
-#                     self.kernel_size[i],
-#                     padding='same',
-#                     stride=self.strides[i],
-#                     dilation=self.dilation_rate[i])
-#                 new_space.append(new_dim)
-#             new_shape = (input_shape[0], self.filters) + tuple(new_space)
-#             return [new_shape, new_shape]
-

@@ -1,5 +1,9 @@
 {
+    "storage": {
+        "path": "D:\\DL_Datasets\\TCC_Files_Generation"
+    },
     "dataset": {
+        "name": "rectangular_impedanced",
         "factor": 4,
         "num_freq": 40,
         "path": "/content/gdrive/MyDrive/GitHub/sound-field-neural-network-58584a7774ecc997dec3663400843864cb6b79ed/dataset_gerado/rectangular_impedanced",
@@ -7,10 +11,10 @@
         "ySamples": 32
     },
     "evaluation": {
-        "max_mics": 65,
+        "max_mics": 15,
         "min_mics": 5,
-        "num_comb": 20,
-        "step_mics": 10
+        "num_comb": 10,
+        "step_mics": 5
     },
     "training": {
         "batch_size": 4,
@@ -22,7 +26,7 @@
         "num_epochs": 500,
         "num_steps_train": 5000,
         "num_steps_val": 2000,
-        "session_dir": "sessions/session_0",
+        "session_dir": "sessions\\session_0",
         "session_id": 0
     },
     "visualization": {
@@ -30,6 +34,7 @@
         "source": 0
     },
     "prediction": {
-        "path": "C:/Users/aledr/Documents/GitHub/neural_network_module/sessions/session_0/prediction/sample/1_d_6_6_36_s_0_0_"
+        "predicted_file_path": "C:/Users/aledr/Documents/GitHub/neural_network_module/sessions/session_0/prediction/sample/1_d_6_6_36_s_0_0_",
+        "num_mics": 10
     }
 }

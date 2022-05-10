@@ -5,16 +5,13 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import warnings
 warnings.simplefilter('ignore', UserWarning)
-import sys
-import numpy as np
-import util
-from datetime import datetime
+import util.util as util
 from keras.models import Model, load_model
 from keras.optimizers import Adam
 from keras.layers import Input, Conv2D, UpSampling2D, Dropout, LeakyReLU, BatchNormalization, Activation, Lambda, Conv1D, UpSampling1D
 from keras.layers.merge import Concatenate
 from keras import backend as K
-from keras.callbacks import CSVLogger, ModelCheckpoint, EarlyStopping
+from keras.callbacks import CSVLogger, ModelCheckpoint
 from keras.metrics import mean_absolute_error
 
 
@@ -39,11 +36,15 @@ class SFUN(object):
         """Creates a SFUN object.
             Returns: keras model
         """
-        self.checkpoints_path = os.path.join(self._config['training']['session_dir'], 'checkpoints')
+        self.checkpoints_path = os.path.join(self._config['training']['session_dir'],'checkpoints')
+        session_dir_path = os.path.join(self._config['training']['session_dir'])
         if not os.path.exists(self.checkpoints_path):
+            
+            if not os.path.exists(session_dir_path):
+                os.mkdir(session_dir_path)
             os.mkdir(self.checkpoints_path)
         
-        self.history_filename = 'history_' + self._config['training']['session_dir'].split("\\")[-1] + '.csv'
+        self.history_filename = "".join(['history_',self._config['training']['session_dir'].split("\\")[-1],'.csv'])
 
         self.model, inputs_mask = self.build_model(train_bn=self.train_bn)
         self.compile_sfun(self.model, inputs_mask, self._config['training']['lr'])
@@ -207,7 +208,6 @@ class SFUN(object):
 
         """
         print('Training starts!')
-        
         self.model.fit_generator(
             train_generator,
             steps_per_epoch=num_steps_train,
@@ -217,7 +217,7 @@ class SFUN(object):
             verbose=1,
             initial_epoch=self.epoch_num,
             callbacks=[
-                CSVLogger(os.path.join(self._config['training']['session_dir'], self.history_filename), append=True),
+                CSVLogger("".join([self._config['training']['session_dir'], "/",self.history_filename]), append=True),
                 ModelCheckpoint(os.path.join(self.checkpoints_path, 'checkpoint.{epoch:05d}-{val_loss:.3f}.hdf5'), save_best_only=True)
             ]
         )

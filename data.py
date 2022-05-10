@@ -3,7 +3,7 @@
 
 import os
 import numpy as np
-import util
+import util.util as util
 import copy
 import gc
 import collections
@@ -22,7 +22,7 @@ class Dataset():
         """
 
         self.config = config
-        self.path = self.config['dataset']['path']
+        self.path = os.path.join(self.config['storage']['path'],"datasets",self.config['dataset']['name'])
         self.file_paths = {'train': [], 'val': []}
         self.soundfields = {'train': [], 'val': []}
         self.batch_size = self.config['training']['batch_size']
@@ -36,13 +36,14 @@ class Dataset():
         """ Load Dataset. """
 
         print('\nLoading Simulated Sound Field Dataset...')
-        for set in ['train', 'val']:
-            current_directory = "".join([self.path,"/", 'simulated_soundfields',"/", set])
+        for set_ in ['train', 'val']:
+            
+            current_directory = os.path.join(self.path,'simulated_soundfields', set_)
 
             soundfields, file_paths = self.load_directory(current_directory)
 
-            self.file_paths[set] = file_paths
-            self.soundfields[set] = soundfields
+            self.file_paths[set_] = file_paths
+            self.soundfields[set_] = soundfields
     
 
         return self
@@ -229,9 +230,94 @@ class MaskGenerator():
         mask_slice = 1-mask_slice
 
         mask = np.repeat(mask_slice, self.channels, axis=2)
-
+        
         return mask
 
+    def _generate_mask_in_quadrants(self,quadrant=None):
+        """Generates a random irregular mask.
+
+        Returns: np.ndarray
+
+        """
+
+        if self.num_mics:
+
+            in_quad, out_quad = self.get_mics_distribution_in_quadrant(quadrant)
+            
+            mask_slice = np.zeros((self.height*self.width), np.uint8)
+
+            num_holes_in_quad = int(len(in_quad) - self.num_mics)
+            index_holes_in_quad = np.random.choice(in_quad,size=num_holes_in_quad,replace=False)
+            
+            mask_slice[out_quad] = 1
+            mask_slice[index_holes_in_quad] = 1
+
+
+            mask_slice.resize(self.height, self.width, 1)
+
+
+        else:
+            mask_slice = np.zeros((self.height, self.width, 1), np.uint8)
+
+            size = 1
+
+            # Draw random lines
+            for _ in range(randint(1, 20)):
+                x1, x2 = randint(1, self.width), randint(1, self.width)
+                y1, y2 = randint(1, self.height), randint(1, self.height)
+                thickness = 1
+                cv2.line(mask_slice,(x1,y1),(x2,y2),(1,1,1),thickness)
+
+            # Draw random circles
+            for _ in range(randint(1, 20)):
+                x1, y1 = randint(1, self.width), randint(1, self.height)
+                radius = randint(1, size)
+                cv2.circle(mask_slice,(x1,y1),radius,(1,1,1), -1)
+
+            # Draw random ellipses
+            for _ in range(randint(1, 20)):
+                x1, y1 = randint(1, self.width), randint(1, self.height)
+                s1, s2 = randint(1, self.width), randint(1, self.height)
+                a1, a2, a3 = randint(3, 180), randint(3, 180), randint(3, 180)
+                thickness = 1
+                cv2.ellipse(mask_slice, (x1,y1), (s1,s2), a1, a2, a3,(1,1,1), thickness)
+
+        mask_slice = 1-mask_slice
+
+        mask = np.repeat(mask_slice, self.channels, axis=2)
+        
+        return mask
+
+    def get_mics_distribution_in_quadrant(self,quadrant):
+                
+                idx_quadrant_1 = {0,1,2,3,8,9,10,11,16,17,18,19,24,25,26,27}
+                idx_quadrant_2 = {4,5,6,7,12,13,14,15,20,21,22,23,28,29,30,31}
+                idx_quadrant_3 = {32,33,34,35,40,41,42,43,48,49,50,51,56,57,58,59}
+                idx_quadrant_4 = {36,37,38,39,44,45,46,47,52,53,54,55,60,61,62,63}
+                idx_quadrant_centr =  {18,19,20,21,26,27,28,29,34,35,36,37,42,43,44,45}
+                
+                if quadrant == 1:
+                    in_quad = list(idx_quadrant_1)
+                    out_quad =  list({*idx_quadrant_2,*idx_quadrant_3,*idx_quadrant_4})
+                if quadrant == 2:
+                    in_quad = list(idx_quadrant_2)
+                    out_quad =  list({*idx_quadrant_1,*idx_quadrant_3,*idx_quadrant_4})
+                if quadrant == 3:
+                    in_quad = list(idx_quadrant_3)
+                    out_quad =  list({*idx_quadrant_1,*idx_quadrant_2,*idx_quadrant_4})
+                if quadrant == 4:
+                    in_quad = list(idx_quadrant_4)
+                    out_quad =  list({*idx_quadrant_1,*idx_quadrant_2,*idx_quadrant_3})
+                if quadrant == 0:
+                    in_quad = list(idx_quadrant_centr)
+                    out_quad = list({*idx_quadrant_1,*idx_quadrant_2,*idx_quadrant_3,*idx_quadrant_4} - idx_quadrant_centr) 
+
+                if quadrant == None:
+                    in_quad = list({*idx_quadrant_1,*idx_quadrant_2,*idx_quadrant_3,*idx_quadrant_4})
+                    out_quad = list({})
+
+                return in_quad, out_quad
+    
     def sample(self, random_seed=None):
         """Retrieve a random mask
 
@@ -242,5 +328,5 @@ class MaskGenerator():
         if random_seed:
             seed(random_seed)
         else:
-            return self._generate_mask()
+            return self._generate_mask_in_quadrants()
 
