@@ -1,0 +1,44 @@
+{
+    "storage": {
+        "path": "C:\\Users\\aledr\\Documents\\GitHub\\soundfields_storage"
+    },
+    "dataset": {
+        "factor": 4,
+        "num_freq": 40,
+        "name": "new_dataset",
+        "xSamples": 32,
+        "ySamples": 32
+    },
+    "evaluation": {
+        "max_mics": 65,
+        "min_mics": 5,
+        "num_comb": 20,
+        "step_mics": 10,
+        "frequencies": [
+            33,
+            51,
+            112,
+            143
+        ]
+    },
+    "training": {
+        "batch_size": 4,
+        "loss": {
+            "hole_weight": 12,
+            "valid_weight": 1
+        },
+        "lr": 0.0002,
+        "num_epochs": 3,
+        "num_steps_train": 1,
+        "num_steps_val": 1,
+        "session_id": 16
+    },
+    "visualization": {
+        "num_mics": 10,
+        "source": 0
+    },
+    "prediction": {
+        "predicted_file_path": "",
+        "num_mics": 10
+    }
+}
