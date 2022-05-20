@@ -7,7 +7,8 @@ import sfun
 import data
 import copy
 import numpy as np
-
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def get_general_checkpoint_path(session_dir, number_checkpoint):
     """Returns the path of the most recent checkpoint in session_dir.
@@ -390,9 +391,57 @@ def simulated_data_evaluation(config_path):
         util.write_results(os.path.join(evaluation_path, filename), results_dict)
 
     print("Analysing and plotting results...")
-    util.analyze_and_plot_simulated_results(evaluation_path, session_dir, config)
+
+    util.analyze_and_plot_simulated_results(evaluation_path, config)
+    
+    history_file = "".join(["history_session_",str(config["training"]["session_id"]),".csv"])
+    session_history_path = os.path.join(session_dir,history_file)
+    plot_training_loss(history_path=session_history_path)
 
     print("Evaluation completed!")
+
+def plot_training_loss(history_path:str):
+    """
+    Plots loss and PSNR from the csv file
+    from "path"
+    """
+
+    df = pd.read_csv(history_path)
+    current_session = history_path.split("\\")[-2]
+    plt.figure(figsize=(10,10))
+    plt.subplot(2,1,1)
+    plt.plot(df["epoch"],df["loss"],"b",linewidth=2)
+    plt.plot(df["epoch"],df["val_loss"],"k",linewidth=2)
+    plt.grid()
+    plt.legend(["loss","val_loss"],loc=5, prop={'size': 15})
+    plt.title(f"Training Losses ({current_session})")
+    plt.ylim([0,5])
+    plt.xlabel("Epoch")
+    
+    plt.subplot(2,1,2)
+    plt.plot(df["epoch"],df["PSNR"],"r",linewidth=2)
+    plt.plot(df["epoch"],df["val_PSNR"],"m",linewidth=2)
+    plt.grid()
+    plt.legend(["PSNR","val_PSNR"],loc=5, prop={'size': 15})
+    plt.title(f"Training PSNR ({current_session})")
+    plt.ylim([10,20])
+    plt.xlabel("Epoch")
+
+    config_path = os.path.join(history_path[:history_path.rfind("\\")],"config.json")
+    config = util.load_config(config_path)
+    save_path = os.path.join(history_path[:history_path.rfind("\\")],
+                                        "simulated_data_evaluation",
+                                        "min_mics_"
+                                        + str(config["evaluation"]["min_mics"])
+                                        + "_max_mics_"
+                                        + str(config["evaluation"]["max_mics"])
+                                        + "_step_mics_"
+                                        + str(config["evaluation"]["step_mics"])
+                                    )
+
+    # if not os.path.exists(individual_results_path):
+    #     os.mkdir(individual_results_path)
+    plt.savefig(os.path.join(save_path,"session_loss_history.png"))
 
 
 def visualize(config_path):

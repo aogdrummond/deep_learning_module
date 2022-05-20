@@ -24,7 +24,7 @@ def create_new_session(config):
         current_session = "".join(["session_",str(config["training"]["session_id"])])
         session_dir_path = os.path.join(sessions_storage_path,current_session)
         config["training"]["session_dir"] = session_dir_path
-        
+
         if not os.path.exists(session_dir_path):
             os.mkdir(session_dir_path)
         util.save_config(config["training"]["session_dir"], config)

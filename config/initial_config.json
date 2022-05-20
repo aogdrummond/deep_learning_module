@@ -1,11 +1,11 @@
 {
     "storage": {
-        "path": "C:\\Users\\aledr\\Documents\\GitHub\\soundfields_storage"
+        "path": "D:\\DL_Datasets\\TCC_Files_Generation\\"
     },
     "dataset": {
         "factor": 4,
         "num_freq": 40,
-        "name": "new_dataset",
+        "name": "matlab\\light_samples",
         "xSamples": 32,
         "ySamples": 32
     },
@@ -27,11 +27,11 @@
             "hole_weight": 12,
             "valid_weight": 1
         },
-        "lr": 0.0002,
-        "num_epochs": 3,
+        "lr": 0.00005,
+        "num_epochs": 5000,
         "num_steps_train": 1,
         "num_steps_val": 1,
-        "session_id": 16
+        "session_id": 21
     },
     "visualization": {
         "num_mics": 10,

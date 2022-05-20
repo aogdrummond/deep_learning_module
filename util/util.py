@@ -516,6 +516,7 @@ def db(array):
 
   ref = array[~np.isnan(array)]
   ref = np.max(ref)/CONSTANTE_REF
+#   ref = 20*10**(-6)
   array_in_dB = 20*np.log10(abs(array/ref))
 
   return array_in_dB

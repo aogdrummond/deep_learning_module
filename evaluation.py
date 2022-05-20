@@ -18,7 +18,7 @@ def evaluate_ssim_nmse(config_path:str):
     print('Loaded configuration from: %s' % config_path)
     session_dir = config_path[:config_path.rfind('\\')+1]
 
-    evaluation_path = os.path.join(session_dir, 'simulated_data_evaluation_quad_0', 'min_mics_' + str(config['evaluation']['min_mics']) +
+    evaluation_path = os.path.join(session_dir, 'simulated_data_evaluation', 'min_mics_' + str(config['evaluation']['min_mics']) +
                                   '_max_mics_' + str(config['evaluation']['max_mics']) + '_step_mics_' +
                                   str(config['evaluation']['step_mics']))
 
@@ -28,9 +28,6 @@ def evaluate_ssim_nmse(config_path:str):
     results_path = os.path.join(evaluation_path,results_file_name)
     results_dataframe = pd.read_csv(results_path, names=CSV_COLUMNS_NAMES)
     dataframe_preprocessed = preprocess_df(results_dataframe)
-    history_file = "".join(["history_session_",str(config["training"]["session_id"]),".csv"])
-    session_history_path = os.path.join(session_dir,history_file)
-    plot_training_loss(history_path=session_history_path)
     plot_evaluation(dataframe_preprocessed, 
                     sample_path = results_path)
     util.analyze_and_plot_simulated_results(evaluation_path,config,dB=True)
@@ -44,45 +41,10 @@ def compare_soundfields(config_path):
     session_dir = config_path[:config_path.rfind('\\')+1]
     
     num_mics = config["visualization"]["num_mics"]
-    visualization_path = os.path.join(session_dir,f"visualization_{num_mics}_mics/")
+    visualization_path = os.path.join(session_dir,"visualization\\")
     
     show_soundfields(soundfield_path=visualization_path, 
                     freq_shown = config["evaluation"]["frequencies"])
-
-
-def plot_training_loss(history_path:str):
-    """
-    Plots loss and PSNR from the csv file
-    from "path"
-    """
-    #OBTER CONFIG PARA PARSEAR O NUM_MICS PARA O FOLDER
-    df = pd.read_csv(history_path)
-    current_session = history_path.split("\\")[-2]
-    plt.figure(figsize=(10,10))
-    plt.subplot(2,1,1)
-    plt.plot(df["epoch"],df["loss"],"b",linewidth=2)
-    plt.plot(df["epoch"],df["val_loss"],"k",linewidth=2)
-    plt.grid()
-    plt.legend(["loss","val_loss"],loc=5, prop={'size': 15})
-    plt.title(f"Training Losses ({current_session})")
-    plt.ylim([0,5])
-    plt.xlabel("Epoch")
-    
-    plt.subplot(2,1,2)
-    plt.plot(df["epoch"],df["PSNR"],"r",linewidth=2)
-    plt.plot(df["epoch"],df["val_PSNR"],"m",linewidth=2)
-    plt.grid()
-    plt.legend(["PSNR","val_PSNR"],loc=5, prop={'size': 15})
-    plt.title(f"Training PSNR ({current_session})")
-    plt.ylim([10,20])
-    plt.xlabel("Epoch")
-    individual_results_path = os.path.join(history_path[:history_path.rfind("\\")], 
-    "simulated_data_evaluation","min_mics_5_max_mics_15_step_mics_5","individual_performance")
-
-    if not os.path.exists(individual_results_path):
-        os.mkdir(individual_results_path)
-    plt.savefig(os.path.join(individual_results_path,"session_loss_history.png"))
-
 
 def plot_evaluation(preprocessed_data:tuple, 
                     sample_path:str):

@@ -3,13 +3,23 @@ config.json - Configuring a session
 
 The parameters present in a `config.json` file allow one to configure a session. Each of these parameters is described below:
 
+### Storage
+* **path**: *string* Path to the storage integrated for the neural network and room simulation modules, aiming to store the data outputed from the modules
 ### Dataset
 Where to find and how to handle the data.
-* **path**: *string* Path to dataset
+* **name**: *string* Path to dataset
+* **num_freq**: *int" Number of frequencies from sample's soundfield used in the neural network
 * **factor**: *int* Value of the factor applied during downsampling and upsampling
 * **xSamples**: *int* Number of ground truth samples along the x-axis in the room. (32 if using the provided dataset)
 * **ySamples**: *int* Number of ground truth samples along the y-axis in the room. (32 if using the provided dataset)
 
+### Evaluation
+How evaluation will be performed.
+* **min_mics**: *int* Minimum number of microphones placed in a room to evaluate the model.
+* **max_mics**: *int* Maximum+1 number of microphones placed in a room to evaluate the model.
+* **step_mics**: *int* Spacing between the value of the number of microphones placed.
+* **num_comb**: *int* Number of different irregular patterns tested with a fix amount of microphones.
+* **frequencies**: *list* List of frequencies of interest when the soundfields are plotted
 ### Training
 How training will be performed.
 * **batch_size**: *int* Number of samples in a batch
@@ -22,14 +32,14 @@ How training will be performed.
   * **valid_weight**: *float* Weight given to the loss term considering microphone position predictions.
   * **hole_weight**: *float* Weight given to the loss term considering non-microphone position predictions.
  
-### Evaluation
-How evaluation will be performed.
-* **min_mics**: *int* Minimum number of microphones placed in a room to evaluate the model.
-* **max_mics**: *int* Maximum+1 number of microphones placed in a room to evaluate the model.
-* **step_mics**: *int* Spacing between the value of the number of microphones placed.
-* **num_comb**: *int* Number of different irregular patterns tested with a fix amount of microphones.
 
 ### Visualization
-How visualization will be performed.
+How visualization of session will be performed. In this case the ground truth is the result of measurement of a real room, aiming to check the performance on real cases
 * **num_mics**: *int* Number of microphones randomly located in the real room.
 * **source**: *int* Numerical identifier of the source location. Must be either 0 or 1.
+
+### Prediction
+
+Prediction of soundfields from simulated files.
+ * **predicted_file_path**: *str* Complete path for the file which will be predicted and compared through trained model 
+ * **num_mics**: *int* Number of microphones randomly located in the predicted room.

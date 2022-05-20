@@ -41,19 +41,21 @@ There are four operating modes: training, simulated data evaluation, real data e
 
 #### Training
 
-Training sessions are differentiated from one another by a session ID defined in `config.json`. All artifacts generated during training are placed in a folder corresponding to this session ID in the `sessions/` folder.
+Training sessions are differentiated from one another by a session ID defined in `initial_config.json`. All artifacts generated during training are placed in a folder corresponding to this session ID in the `neural_network_sessions/` folder, inside the storage directory.
 
-To start training: `python main.py --mode train --config <path_to_config_file>`. Training will begin after the dataset is prepared for training.
+To start training: `python main.py --mode train --config <path_to_initial_config_file>`. Training will begin after the dataset is prepared for training.
 
-Alternatively, there is a pre-trained model available in the `sessions/` folder for quickly trying out with test data.
+Alternatively, there is a pre-trained model available in the `sessions/` folder (called session_0) for quickly trying out with test data.
 
 #### Simulated Data Evaluation
 
-To begin the simulated data evaluation: `python main.py --mode sim-eval --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
+To begin the simulated data evaluation: `python main.py --mode sim-eval --config <path_to_sessions_config_file>`. Note: --config should contain the path to a configuration file *in a session folder, on default saved in the storage*.
 
 To evaluate a model we present every room in the simulated test set with several microphones locations to the most recent checkpoint present in a session folder, and calculate the Normalized Mean Square Error (NMSE) and the Structural Similarity (SSIM) over all analyzed frequencies.
 
-A new directory named `simulated_data_evaluation` is created inside the session folder. It contains a `.csv` file (for each room) containg each individual result and plots showing the performance of the model regarding the metrics and the number of microphones.
+A new directory named `simulated_data_evaluation` is created inside the session folder. It contains a `.csv` file (for each room) containg each individual result and plots showing the performance of the model regarding the metrics and the number of microphones. It also contains a folder called "average_performance" where are saved the plots of NMSE and SSIM averaged in the test set.
+
+ACRESCENTAR O PLOT DO LOSS
 
 #### Real Data Evaluation
 
@@ -63,6 +65,9 @@ To evaluate a model we present the measured real room with several microphones l
 
 A new directory named `real_data_evaluation` is created inside the session folder. It contains a `.csv` file containg each individual result and plots for both source locations showing the performance of the model regarding the metrics and the number of microphones.
 
+#### Evaluation
+
+ESCREVER SOBRE O QUE FAZ E DAR UM NOME MELHOR PARA ISSO AQUI
 
 #### Visualization
 
@@ -72,10 +77,16 @@ To visualize on real data: `python main.py --mode visualize --config <path_to_co
 
 A new directory named `visualization` is created inside the session folder. It contains images of the ground truth sound field, the irregular sound field gathered, the mask, and the predicted sound field for each analyzed frequency. It is used the most recent checkpoint present in the session folder.
 
+#### Prediction
+
+We may wish to visualize the sound field reconstruction on simulated data generated on MATLAB or FEMDER.
+
+To predict it: `python main.py --mode prediction --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
+
+A new directory named `prediction` is created inside the session folder. It contains images of the ground truth sound field, the irregular sound field gathered, the mask, and the predicted sound field for each analyzed frequency. It is used the most recent checkpoint present in the session folder.
+
+
 ## Dataset
 
 Scripts used for generating simulated sound fields are provided inside the `create_data` folder. Tested under Matlab 2018. Special thanks to Martin Bo Møller for the Green's function implementation.
-
-Alternatively, download the dataset (simulated and real sound fields) by running `./download_full_dataset.sh`
-
 

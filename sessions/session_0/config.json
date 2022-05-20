@@ -11,10 +11,16 @@
         "ySamples": 32
     },
     "evaluation": {
-        "max_mics": 15,
+        "max_mics": 50,
         "min_mics": 5,
         "num_comb": 10,
-        "step_mics": 5
+        "step_mics": 10,
+        "frequencies": [
+            33,
+            51,
+            112,
+            143
+        ]
     },
     "training": {
         "batch_size": 4,
