@@ -8,34 +8,45 @@ import evaluation
 
 
 def main():
-    """ Reads command line arguments and starts either training or evaluation. """
+    """Reads command line arguments and starts either training or evaluation."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', default='', help='JSON-formatted file with configuration parameters')
-    parser.add_argument('--mode', default='', help='The operational mode - train|sim-eval|real-eval|visualize')
+    parser.add_argument(
+        "--config", default="", help="JSON-formatted file with configuration parameters"
+    )
+    parser.add_argument(
+        "--mode",
+        default="",
+        help="The operational mode - train|sim-eval|real-eval|visualize",
+    )
     cla = parser.parse_args()
-    if cla.config == '':
-        print('Error: --config flag is required. Enter the path to a configuration file.')
+    if cla.config == "":
+        print(
+            "Error: --config flag is required. Enter the path to a configuration file."
+        )
 
-    if cla.mode == 'sim-eval':
+    if cla.mode == "sim-eval":
         inference.simulated_data_evaluation(cla.config)
-    elif cla.mode == 'real-eval':
+    elif cla.mode == "real-eval":
         inference.real_data_evaluation(cla.config)
-    elif cla.mode == 'train':
+    elif cla.mode == "ssim-nmse":
+        evaluation.evaluate_ssim_nmse(cla.config)
+        evaluation.compare_soundfields(cla.config)
+    elif cla.mode == "train":
         training.train(cla.config)
     # elif cla.mode == "finetune":
-    #     training.model_finetuning(cla.config)        
-    elif cla.mode == 'visualize':
+    #     training.model_finetuning(cla.config)
+    elif cla.mode == "visualize":
         inference.visualize(cla.config)
-    elif cla.mode == 'prediction':
+    elif cla.mode == "prediction":
         inference.predict_soundfield(cla.config)
     # elif cla.mode == "mics_visualize":
     #     inference.visualize_multiple_mics(cla.config)
-    elif cla.mode == "random-result-eval":
-        # evaluation.evaluate_ssim_nmse(cla.config)
-        evaluation.compare_soundfields(cla.config)
+
     else:
-        print('Error: invalid operational mode - options: train, sim-eval, real-eval or visualize')
+        print(
+            "Error: invalid operational mode - options: train, sim-eval, real-eval or visualize"
+        )
 
 
 if __name__ == "__main__":

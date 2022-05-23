@@ -87,12 +87,6 @@ class SFUN(object):
         inputs_sf = Input((self._config['dataset']['xSamples'], self._config['dataset']['ySamples'], self.num_freq), name='inputs_sf')
         inputs_mask = Input((self._config['dataset']['xSamples'], self._config['dataset']['ySamples'], self.num_freq), name='inputs_mask')
 
-        def dropout_layer(sf_in,mask_in,rate): 
-            dropout_layer = Dropout(rate=rate)
-            drop_sf = dropout_layer(sf_in,training=True)
-            drop_mask =dropout_layer(mask_in,training=True)
-            return drop_sf, drop_mask
-        
         def encoder_layer(sf_in, mask_in, filters, kernel_size, bn=True):
             conv, mask = util.PConv2D(filters, kernel_size, strides=2, padding='same', name='encoder_partialconv_'+str(encoder_layer.counter))([sf_in, mask_in])
             if bn:
@@ -116,7 +110,7 @@ class SFUN(object):
 
         encoder_layer.counter = 0
 
-        e_conv1, e_mask1 = encoder_layer(inputs_sf, inputs_mask, 64, 5, bn=False)    #ESSE BN DEVE SER FALSE PARA AVALIAÇÃO
+        e_conv1, e_mask1 = encoder_layer(inputs_sf, inputs_mask, 64, 5)    #ESSE BN DEVE SER FALSE PARA AVALIAÇÃO
         e_conv2, e_mask2 = encoder_layer(e_conv1, e_mask1, 128, 3)
         e_conv3, e_mask3 = encoder_layer(e_conv2, e_mask2, 256, 3)
         e_conv4, e_mask4 = encoder_layer(e_conv3, e_mask3, 512, 3)
@@ -126,7 +120,7 @@ class SFUN(object):
         d_conv5, d_mask5 = decoder_layer(e_conv4, e_mask4, e_conv3, e_mask3, 256, 3)
         d_conv6, d_mask6 = decoder_layer(d_conv5, d_mask5, e_conv2, e_mask2, 128, 3)
         d_conv7, d_mask7 = decoder_layer(d_conv6, d_mask6, e_conv1, e_mask1, 64, 3)
-        d_conv8, d_mask8 = decoder_layer(d_conv7, d_mask7, inputs_sf, inputs_mask, self.num_freq, 3, bn=False)
+        d_conv8, d_mask8 = decoder_layer(d_conv7, d_mask7, inputs_sf, inputs_mask, self.num_freq, 3)
         outputs = Conv2D(self.num_freq, 1, activation = 'sigmoid', name='outputs_sf')(d_conv8)
     
         # Setup the model inputs / outputs
