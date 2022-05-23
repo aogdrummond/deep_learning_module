@@ -24,12 +24,13 @@ def evaluate_ssim_nmse(config_path:str):
 
     if not os.path.exists(evaluation_path): os.mkdir(evaluation_path)
 
-    results_file_name = random.choice(os.listdir(evaluation_path))
-    results_path = os.path.join(evaluation_path,results_file_name)
-    results_dataframe = pd.read_csv(results_path, names=CSV_COLUMNS_NAMES)
-    dataframe_preprocessed = preprocess_df(results_dataframe)
-    plot_evaluation(dataframe_preprocessed, 
-                    sample_path = results_path)
+    results_file_names = [file_name for file_name in os.listdir(evaluation_path) if file_name.endswith(".csv")]
+    for results_file_name in results_file_names:
+      results_path = os.path.join(evaluation_path,results_file_name)
+      results_dataframe = pd.read_csv(results_path, names=CSV_COLUMNS_NAMES)
+      dataframe_preprocessed = preprocess_df(results_dataframe)
+      plot_evaluation(dataframe_preprocessed, 
+                      sample_path = results_path)
     util.analyze_and_plot_simulated_results(evaluation_path,config,dB=True)
     
 def compare_soundfields(config_path):
@@ -49,7 +50,7 @@ def compare_soundfields(config_path):
 def plot_evaluation(preprocessed_data:tuple, 
                     sample_path:str):
 
-
+  print("Plotting individual performance")
   dict_loss_SSIM = preprocessed_data[0]
   dict_loss_NMSE = preprocessed_data[1]
   freq = preprocessed_data[2]

@@ -143,7 +143,6 @@ class DataGenerator(ImageDataGenerator):
 
 
             # Get soundfield samples
-            
             sf_gt = next(super().flow(x, *args, **kwargs))
             initial_sf = copy.deepcopy(sf_gt)
 

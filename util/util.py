@@ -52,7 +52,19 @@ def save_config(config_filepath, config):
         print('No readable config file at path: ' + config_filepath)
     else:
         json.dump(config, config_file, indent=4, sort_keys=True)
+        
+def save_predict_mat(original_file_path:str,
+                     pred_sf: np.array,
+                     save_path: str,
+                    ):
+    pred_mat = scipy.io.loadmat(original_file_path)
+    pred_sf = pred_sf.reshape(32,32,40) #Como generalizar?
+    pred_mat["AbsFreqResponse"] = pred_sf
+    pred_mat["Frequency"] = get_frequencies()
+    pred_mat["FrequencyResponse"] = []
+    file_path = os.path.join(save_path,f"predicted_data.mat")
 
+    scipy.io.savemat(file_path,pred_mat)
 
 def dir_contains_files(path):
     """ Check if a directory contains files.
@@ -491,9 +503,15 @@ def analyze_and_plot_simulated_results(evaluation_path, config, dB=True):
         ssim = np.asarray(results['SSIM'][num_mics])
         
         label = str(num_mics)
-        m, lb, ub = mean_confidence_interval(nmse)
-        if dB == True:
-          m = db(m)
+        try:
+            m, lb, ub = mean_confidence_interval(nmse)
+            if dB == True:
+                m = db(m)
+        
+        except:
+        
+            continue
+       
         
         GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
            
@@ -531,6 +549,8 @@ def mean_confidence_interval(data, confidence=0.95):
         Returns: np.ndarray, np.ndarray, np.ndarray
 
         """
+    import pdb
+    pdb.set_trace()
     data = 1.0 * np.array(data)
     n = len(data)
     m, se = np.mean(data, axis=0), scipy.stats.sem(data)

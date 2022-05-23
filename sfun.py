@@ -87,16 +87,10 @@ class SFUN(object):
         inputs_sf = Input((self._config['dataset']['xSamples'], self._config['dataset']['ySamples'], self.num_freq), name='inputs_sf')
         inputs_mask = Input((self._config['dataset']['xSamples'], self._config['dataset']['ySamples'], self.num_freq), name='inputs_mask')
 
-        def dropout_layer(sf_in,mask_in,rate): 
-            dropout_layer = Dropout(rate=rate)
-            drop_sf = dropout_layer(sf_in,training=True)
-            drop_mask =dropout_layer(mask_in,training=True)
-            return drop_sf, drop_mask
-        
         def encoder_layer(sf_in, mask_in, filters, kernel_size, bn=True):
             conv, mask = util.PConv2D(filters, kernel_size, strides=2, padding='same', name='encoder_partialconv_'+str(encoder_layer.counter))([sf_in, mask_in])
             if bn:
-                conv = BatchNormalization(name='encoder_bn_'+str(encoder_layer.counter))(conv, training=False)
+                conv = BatchNormalization(name='encoder_bn_'+str(encoder_layer.counter))(conv, training=train_bn)
             conv = Activation('relu')(conv)
             encoder_layer.counter += 1
             return conv, mask

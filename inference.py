@@ -338,7 +338,6 @@ def simulated_data_evaluation(config_path):
         os.makedirs(evaluation_path)
     
     test_path = os.path.join(config["storage"]["path"],"datasets",config["dataset"]["name"],"simulated_soundfields", "test")
-
     filenames = get_test_filenames(test_path)
 
     frequencies = util.get_frequencies()
@@ -547,7 +546,101 @@ def visualize(config_path):
             os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
         )
 
+def visualize_general(config_path):
+    """Plot predictions of trained model on SIMULATED data.
 
+    Args:
+    config_path: string
+
+    """
+
+    config = util.load_config(config_path)
+    print("Loaded configuration from: %s" % config_path)
+
+    frequencies = util.get_frequencies()
+
+    session_dir = config_path[: config_path.rfind("\\") + 1]
+
+    checkpoint_path = get_general_checkpoint_path(
+        session_dir=session_dir, number_checkpoint=-1
+    )
+    if not checkpoint_path:
+        print("Error: No checkpoint found in same directory as configuration file.")
+        return
+
+    model = sfun.SFUN(config, train_bn=False)
+
+    visualization_path = os.path.join(session_dir,'visualization')
+    if not os.path.exists(visualization_path):
+        os.makedirs(visualization_path)
+
+    dataset_path = os.path.join(config["storage"]["path"],"datasets", config["dataset"]["name"])
+    visualized_room_dir = os.path.join(dataset_path,"visualized_soundfields")
+    
+    mask_generator = data.MaskGenerator(
+        config["dataset"]["xSamples"] // config["dataset"]["factor"],
+        config["dataset"]["ySamples"] // config["dataset"]["factor"],
+        len(frequencies),
+        num_mics=config["visualization"]["num_mics"],
+    )
+    visualized_room_filename = os.listdir(visualized_room_dir)[-1]
+    visualized_room_filepath =  os.path.join(visualized_room_dir,visualized_room_filename)
+    # Get measured sound field
+
+    sf_sample = util.load_generated_soundfield(
+        visualized_room_filepath, config["visualization"]["source"]
+    )
+    sf_gt = np.expand_dims(copy.deepcopy(sf_sample), axis=0)
+    initial_sf = np.expand_dims(sf_sample, axis=0)
+
+    # Get mask samples
+    mask = mask_generator.sample()
+    mask = np.expand_dims(mask, axis=0)
+
+    # Preprocessing
+    irregular_sf, mask = util.preprocessing(
+        config["dataset"]["factor"], initial_sf, mask
+    )
+
+    # Save range to allow colorbar
+    util.save_pressure_range(sf_gt, visualization_path)
+    print("\tPressure range saved")
+    # Scale ground truth sound field
+    sf_gt = util.scale(sf_gt)
+
+    print("\nPlotting Ground Truth Sound Field Scaled...")
+    for num_freq, freq in enumerate(frequencies):
+        print("\tat frequency " + str(freq))
+        util.plot_2D(
+            sf_gt[0, ..., num_freq],
+            os.path.join(visualization_path, str(freq) + "_Hz_Ground_Truth.png"),
+        )
+
+    print("\nPlotting Irregular Sound Field...")
+    for num_freq, freq in enumerate(frequencies):
+        print("\tat frequency " + str(freq))
+        util.plot_2D(
+            irregular_sf[0, ..., num_freq],
+            os.path.join(visualization_path, str(freq) + "_Hz_Irregular_SF.png"),
+        )
+
+    print("\nPlotting Mask...")
+    for num_freq, freq in enumerate(frequencies):
+        print("\tat frequency " + str(freq))
+        util.plot_2D(
+            mask[0, ..., num_freq],
+            os.path.join(visualization_path, str(freq) + "_Hz_Mask.png"),
+        )
+
+    pred_sf = model.predict([irregular_sf, mask])
+
+    print("\nPlotting Predicted Sound Field...")
+    for num_freq, freq in enumerate(frequencies):
+        print("\tat frequency " + str(freq))
+        util.plot_2D(
+            pred_sf[0, ..., num_freq],
+            os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
+        )
 def visualize_multiple_mics(config_path):
     """Plot predictions of trained model on real data, using different
     number of mics.
@@ -741,3 +834,7 @@ def predict_soundfield(config_path):
             pred_sf[0, ..., num_freq],
             os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
         )
+    
+    util.save_predict_mat(original_file_path=filepath,
+                          pred_sf=pred_sf,
+                          save_path=visualization_path)
