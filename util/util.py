@@ -11,6 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 from skimage.measure import compare_ssim as ssim
+from scipy import ndimage
 from keras.utils import conv_utils
 from keras import backend as K
 from keras.engine import InputSpec
@@ -20,7 +21,7 @@ from keras.layers import Conv2D
 """ Saving/loading/checking files from disk """
 
 def load_config(config_filepath):
-    """ Load a session configuration from a JSON-formatted file.
+    """Load a session configuration from a JSON-formatted file.
 
     Args:
     config_filepath: string
@@ -29,15 +30,16 @@ def load_config(config_filepath):
     """
 
     try:
-        config_file = open(config_filepath, 'r')
+        config_file = open(config_filepath, "r")
     except IOError:
-        print('No readable config file at path: ' + config_filepath)
+        print("No readable config file at path: " + config_filepath)
     else:
         with config_file:
             return json.load(config_file)
 
+
 def save_config(config_filepath, config):
-    """ Save a session configuration to a JSON-formatted file.
+    """Save a session configuration to a JSON-formatted file.
 
     Args:
     config_filepath: string
@@ -45,29 +47,17 @@ def save_config(config_filepath, config):
 
     """
 
-
     try:
-        config_file = open(config_filepath, 'w')
+        config_file = open(config_filepath, "w")
     except IOError:
-        print('No readable config file at path: ' + config_filepath)
+        print("No readable config file at path: " + config_filepath)
     else:
         json.dump(config, config_file, indent=4, sort_keys=True)
-        
-def save_predict_mat(original_file_path:str,
-                     pred_sf: np.array,
-                     save_path: str,
-                    ):
-    pred_mat = scipy.io.loadmat(original_file_path)
-    pred_sf = pred_sf.reshape(32,32,40) #Como generalizar?
-    pred_mat["AbsFreqResponse"] = pred_sf
-    pred_mat["Frequency"] = get_frequencies()
-    pred_mat["FrequencyResponse"] = []
-    file_path = os.path.join(save_path,f"predicted_data.mat")
 
-    scipy.io.savemat(file_path,pred_mat)
+
 
 def dir_contains_files(path):
-    """ Check if a directory contains files.
+    """Check if a directory contains files.
 
     Args:
     path: string
@@ -76,12 +66,13 @@ def dir_contains_files(path):
     """
 
     for f in os.listdir(path):
-        if not f.startswith('.'):
+        if not f.startswith("."):
             return True
     return False
 
+
 def load_soundfield(filepath, freq):
-    """ Load a simulated sound field saved in a mat file.
+    """Load a simulated sound field saved in a mat file.
 
     Args:
     filepath: string
@@ -90,17 +81,28 @@ def load_soundfield(filepath, freq):
     Returns: np.ndarray
 
     """
-    
+
     frequencies = np.asarray(freq)
     mat = scipy.io.loadmat(filepath)
-    f_response = mat['AbsFrequencyResponse']
+    f_response = mat["AbsFrequencyResponse"]
     f_response = np.transpose(f_response, (1, 0, 2))
-    soundfield = f_response[:,:,frequencies]
+    soundfield = f_response[:, :, frequencies]
 
     return soundfield
 
+def load_receiver_coordinates(filepath:str)->np.array:
+    """
+    Loads the array containing the 3D coordinates for each 
+    receiver applied in the soundfield
+    """
+
+    mat = scipy.io.loadmat(filepath)
+    
+    return mat["Receiver_Coord"]
+
+
 def load_RoomB_soundfield(filepath, source_position):
-    """ Load the measured sound field saved in a mat file.
+    """Load the measured sound field saved in a mat file.
 
     Args:
     filepath: string
@@ -110,14 +112,14 @@ def load_RoomB_soundfield(filepath, source_position):
 
     """
     mat = scipy.io.loadmat(filepath)
-    f_response = mat['AbsFrequencyResponse']
+    f_response = mat["AbsFrequencyResponse"]
     f_response = f_response[..., source_position]
     soundfield = np.transpose(f_response, (1, 0, 2))
     return soundfield
 
-    
+
 def load_generated_soundfield(filepath, source_position):
-    """ Load the measured sound field saved in a mat file.
+    """Load the measured sound field saved in a mat file.
 
     Args:
     filepath: string
@@ -127,23 +129,25 @@ def load_generated_soundfield(filepath, source_position):
 
     """
     mat = scipy.io.loadmat(filepath)
-    #Extract right frequencies matrices
+    # Extract right frequencies matrices
     frequencies = get_frequencies()
-    f_response = mat['AbsFrequencyResponse']
+    f_response = mat["AbsFrequencyResponse"]
     f_response = np.transpose(f_response, (1, 0, 2))
-    f_response = f_response[:,:,frequencies]
-  
-    # f_response = f_response[..., source_position]
+    f_response = f_response[:, :, frequencies]
     soundfield = np.flipud(f_response)
-    # soundfield = np.transpose(f_response, (1, 0, 2))
+
     return soundfield
 
-def save_pressure_range(sf_matrix,folder_path):
-  
-  pressure_range = {"MaxPressurePa": np.max(sf_matrix),"MinPressurePa": np.min(sf_matrix)}
-  json_path = "".join((folder_path,"/pressure_range.json"))
-  with open(json_path, "w") as pressure_file:
-    json.dump(pressure_range, pressure_file)
+
+def save_pressure_range(sf_matrix, folder_path):
+
+    pressure_range = {
+        "MaxPressurePa": np.max(sf_matrix),
+        "MinPressurePa": np.min(sf_matrix),
+    }
+    json_path = "".join((folder_path, "/pressure_range.json"))
+    with open(json_path, "w") as pressure_file:
+        json.dump(pressure_range, pressure_file)
 
 def get_frequencies():
     """Loads the frequency numbers found at 'util/frequencies.txt'.
@@ -153,25 +157,28 @@ def get_frequencies():
     """
 
     # freqs_path = 'util/frequencies.txt'
-    freqs_path = 'util/shortened_frequencies_up_to_150.txt'
+    freqs_path = "util/frequencies_up_to_150.txt"
     with open(freqs_path) as f:
-        freqs = [[int(freq) for freq in line.strip().split(' ')] for line in f.readlines()][0]
+        freqs = [
+            [int(freq) for freq in line.strip().split(" ")] for line in f.readlines()
+        ][0]
 
     return freqs
 
 """ Data processing functions """
 
+
 def preprocessing(factor, sf, mask):
-    """ Perfom all preprocessing steps.
+    """Perfom all preprocessing steps.
 
-        Args:
-        factor: int
-        sf: np.ndarray
-        mask: np.ndarray
+    Args:
+    factor: int
+    sf: np.ndarray
+    mask: np.ndarray
 
-        Returns: np.ndarray, np.ndarray
+    Returns: np.ndarray, np.ndarray
 
-        """
+    """
 
     # Downsampling
     downsampled_sf = downsampling(factor, sf)
@@ -189,48 +196,51 @@ def preprocessing(factor, sf, mask):
 
 
 def downsampling(dw_factor, input_sfs):
-    """ Downsamples sound fields given a downsampling factor.
+    """Downsamples sound fields given a downsampling factor.
 
-        Args:
-        dw_factor: int
-        input_sfs: np.ndarray
+    Args:
+    dw_factor: int
+    input_sfs: np.ndarray
 
-        Returns: np.ndarray
+    Returns: np.ndarray
 
-        """
-    return input_sfs[:, 0:input_sfs.shape[1]:dw_factor, 0:input_sfs.shape[2]:dw_factor, :]
+    """
+    return input_sfs[
+        :, 0 : input_sfs.shape[1] : dw_factor, 0 : input_sfs.shape[2] : dw_factor, :
+    ]
 
 
 def apply_mask(input_sfs, masks):
-    """ Apply masks to sound fields.
+    """Apply masks to sound fields.
 
-        Args:
-        input_sfs: np.ndarray
-        masks: np.ndarray
+    Args:
+    input_sfs: np.ndarray
+    masks: np.ndarray
 
-        Returns: np.ndarray
+    Returns: np.ndarray
 
-        """
+    """
 
     masked_sfs = []
     for sf, mk in zip(input_sfs, masks):
         aux_sf = copy.deepcopy(sf)
-        aux_sf[mk==0] = 0
+        aux_sf[mk == 0] = 0
         for i in range(sf.shape[2]):
             aux_max = aux_sf[:, :, i].max()
-            sf[:, :, i][mk[:, :, i]==0] = aux_max
+            sf[:, :, i][mk[:, :, i] == 0] = aux_max
         masked_sfs.append(sf)
     return np.asarray(masked_sfs)
 
+
 def scale(input_sfs):
-    """ Scale data in range 0-1.
+    """Scale data in range 0-1.
 
-        Args:
-        input_sfs: np.ndarray
+    Args:
+    input_sfs: np.ndarray
 
-        Returns: np.ndarray
+    Returns: np.ndarray
 
-        """
+    """
 
     scaled_sf = []
     for sf in input_sfs:
@@ -240,49 +250,73 @@ def scale(input_sfs):
             if aux_max == aux_min:
                 sf[:, :, i] = 1
             else:
-                sf[:, :, i] = (sf[:, :, i]-aux_min)/(aux_max-aux_min)
+                sf[:, :, i] = (sf[:, :, i] - aux_min) / (aux_max - aux_min)
         scaled_sf.append(sf)
     return np.asarray(scaled_sf)
 
+
 def upsampling(up_factor, input_sfs, masks):
-    """ Upsamples sound fields and masks given a upsampling factor.
+    """Upsamples sound fields and masks given a upsampling factor.
 
-        Args:
-        up_factor: int
-        input_sfs: np.ndarray
-        masks: np.ndarray
+    Args:
+    up_factor: int
+    input_sfs: np.ndarray
+    masks: np.ndarray
 
-        Returns: np.ndarray, np.ndarray
+    Returns: np.ndarray, np.ndarray
 
-        """
+    """
 
     batch_sf_up = []
     batch_mask_up = []
 
-    for sf, mask in zip(input_sfs, masks): #for each sample in the batch size
+    for sf, mask in zip(input_sfs, masks):  # for each sample in the batch size
         sf_up = []
         mask_up = []
         sf = np.swapaxes(sf, 2, 0)
         mask = np.swapaxes(mask, 2, 0)
         for sf_slice in sf:
-            positions = np.repeat(range(1, sf_slice.shape[1]), up_factor-1) #positions in sf slice to put 1
-            sf_slice_up = np.insert(sf_slice, obj=positions,values=np.ones(len(positions)), axis=1)
-            sf_slice_up = np.transpose(np.insert(np.transpose(sf_slice_up),obj=positions,values=np.ones(len(positions)), axis=1))
-            sf_slice_up = np.pad(sf_slice_up, (0,up_factor-1),  mode='constant', constant_values=1)
-            sf_slice_up = np.roll(sf_slice_up, (up_factor-1)//2, axis=0)
-            sf_slice_up = np.roll(sf_slice_up, (up_factor-1)//2, axis=1)
+            positions = np.repeat(
+                range(1, sf_slice.shape[1]), up_factor - 1
+            )  # positions in sf slice to put 1
+            sf_slice_up = np.insert(
+                sf_slice, obj=positions, values=np.ones(len(positions)), axis=1
+            )
+            sf_slice_up = np.transpose(
+                np.insert(
+                    np.transpose(sf_slice_up),
+                    obj=positions,
+                    values=np.ones(len(positions)),
+                    axis=1,
+                )
+            )
+            sf_slice_up = np.pad(
+                sf_slice_up, (0, up_factor - 1), mode="constant", constant_values=1
+            )
+            sf_slice_up = np.roll(sf_slice_up, (up_factor - 1) // 2, axis=0)
+            sf_slice_up = np.roll(sf_slice_up, (up_factor - 1) // 2, axis=1)
             sf_up.append(sf_slice_up)
 
         mask_slice = mask[0, :, :]
-        positions = np.repeat(range(1, mask_slice.shape[1]), up_factor-1) #positions in mask slice to put 0
-        mask_slice_up = np.insert(mask_slice, obj=positions,values=np.zeros(len(positions)), axis=1)
-        mask_slice_up = np.transpose(np.insert(np.transpose(mask_slice_up),obj=positions,values=np.zeros(len(positions)), axis=1))
-        mask_slice_up = np.pad(mask_slice_up, (0,up_factor-1),  mode='constant')
-        mask_slice_up = np.roll(mask_slice_up, (up_factor-1)//2, axis=0)
-        mask_slice_up = np.roll(mask_slice_up, (up_factor-1)//2, axis=1)
+        positions = np.repeat(
+            range(1, mask_slice.shape[1]), up_factor - 1
+        )  # positions in mask slice to put 0
+        mask_slice_up = np.insert(
+            mask_slice, obj=positions, values=np.zeros(len(positions)), axis=1
+        )
+        mask_slice_up = np.transpose(
+            np.insert(
+                np.transpose(mask_slice_up),
+                obj=positions,
+                values=np.zeros(len(positions)),
+                axis=1,
+            )
+        )
+        mask_slice_up = np.pad(mask_slice_up, (0, up_factor - 1), mode="constant")
+        mask_slice_up = np.roll(mask_slice_up, (up_factor - 1) // 2, axis=0)
+        mask_slice_up = np.roll(mask_slice_up, (up_factor - 1) // 2, axis=1)
         mask_slice_up = mask_slice_up[np.newaxis, :]
         mask_up = np.repeat(mask_slice_up, mask.shape[0], axis=0)
-
 
         batch_sf_up.append(sf_up)
         batch_mask_up.append(mask_up)
@@ -295,19 +329,20 @@ def upsampling(up_factor, input_sfs, masks):
 
     return batch_sf_up, batch_mask_up
 
+
 def postprocessing(pred_sf, measured_sf, freq_num, pattern, factor):
-    """ Perfoms all postprocessing steps.
+    """Perfoms all postprocessing steps.
 
-        Args:
-        pred_sf: np.ndarray
-        measured_sf: np.ndarray
-        freq_num: int
-        pattern: np.ndarray
-        factor: int
+    Args:
+    pred_sf: np.ndarray
+    measured_sf: np.ndarray
+    freq_num: int
+    pattern: np.ndarray
+    factor: int
 
-        Returns: np.ndarray
+    Returns: np.ndarray
 
-        """
+    """
 
     # Use linear regression to compute the rescaling parameters
 
@@ -325,39 +360,41 @@ def postprocessing(pred_sf, measured_sf, freq_num, pattern, factor):
     m, c = np.linalg.lstsq(A, y, rcond=-1)[0]
 
     # rescale values
-    reconstructed_sf_slice = pred_sf[0, :, :, freq_num]*m + c
+    reconstructed_sf_slice = pred_sf[0, :, :, freq_num] * m + c
 
     return reconstructed_sf_slice
 
 
 """ Evaluation tools and metrics """
 
+
 def write_results(filepath, results_dict):
-    """ Write evaluation results to a .csv file
+    """Write evaluation results to a .csv file
 
-        Args:
-        filepath: string
-        results_dict: dict
+    Args:
+    filepath: string
+    results_dict: dict
 
-        Returns: np.ndarray
+    Returns: np.ndarray
 
-        """
+    """
 
-    with open(filepath, 'w') as csvfile:
+    with open(filepath, "w") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=results_dict.keys())
         writer.writeheader()
-        writer.writerows(convert_dict(results_dict, len(results_dict['name'])))
+        writer.writerows(convert_dict(results_dict, len(results_dict["name"])))
+
 
 def convert_dict(mydict, numentries):
-    """ Convert dict of lists to list of dicts.
+    """Convert dict of lists to list of dicts.
 
-        Args:
-        mydict: dict
-        numentries: int
+    Args:
+    mydict: dict
+    numentries: int
 
-        Returns: list
+    Returns: list
 
-        """
+    """
 
     data = []
     for i in range(numentries):
@@ -367,54 +404,60 @@ def convert_dict(mydict, numentries):
         data.append(row)
     return data
 
+
 def compute_NMSE(ref, pred):
-    """ Compute Normalised Mean Square Error.
+    """Compute Normalised Mean Square Error.
 
-        Args:
-        ref: np.ndarray
-        pred: np.ndarray
+    Args:
+    ref: np.ndarray
+    pred: np.ndarray
 
-        Returns: np.float64
+    Returns: np.float64
 
-        """
+    """
 
     mse = np.mean((ref.flatten() - pred.flatten()) ** 2)
-    return mse / np.mean(ref.flatten()**2)
+    return mse / np.mean(ref.flatten() ** 2)
+
 
 def compute_SSIM(ref, pred, data_range):
-    """ Compute Structural Similarity.
+    """Compute Structural Similarity.
 
-        Args:
-        ref: np.ndarray
-        pred: np.ndarray
-        data_range: np.float64
+    Args:
+    ref: np.ndarray
+    pred: np.ndarray
+    data_range: np.float64
 
-        Returns: np.float64
+    Returns: np.float64
 
-        """
+    """
     return ssim(ref, pred, data_range=data_range)
 
+
 def compute_average_pressure(soundfield_slice):
-    """ Compute Average Pressure.
+    """Compute Average Pressure.
 
-        Args:
-        soundifeld_slice: np.ndarray
+    Args:
+    soundifeld_slice: np.ndarray
 
-        Returns: np.float64
+    Returns: np.float64
 
-        """
+    """
     p_square = np.mean(np.square(np.absolute(soundfield_slice)))
-    return 10.0*np.log10(p_square)
+    return 10.0 * np.log10(p_square)
+
 
 """ Analysis and plotting tools for real sound fields """
+
+
 def analyze_and_plot_real_results(results_filepath, config):
-    """ Read real results .csv files, analyze data, and plot.
+    """Read real results .csv files, analyze data, and plot.
 
-        Args:
-        results_filepath: string
-        config: dict
+    Args:
+    results_filepath: string
+    config: dict
 
-        """
+    """
 
     plot_path, _ = os.path.split(results_filepath)
 
@@ -423,162 +466,183 @@ def analyze_and_plot_real_results(results_filepath, config):
     freqs = get_frequencies()
 
     for source in [0, 1]:
-        plt.figure(3, figsize = (25, 12.5))
+        plt.figure(3, figsize=(25, 12.5))
         GLOBAL_NMSE = plt.axes()
-        plt.figure(11, figsize = (25, 12.5))
+        plt.figure(11, figsize=(25, 12.5))
         GLOBAL_SSIM = plt.axes()
 
-        for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
-            df1 = df_all[['freq','NMSE', 'SSIM', 'num_mics','num_file', 'num_comb']]
-            mic_results = df1.loc[df1['num_file'] == source]
-            mic_results = mic_results.loc[mic_results['num_mics'] == num_mics]
-            res = mic_results[['NMSE', 'SSIM', 'num_comb']]
+        for num_mics in range(
+            config["evaluation"]["min_mics"],
+            config["evaluation"]["max_mics"],
+            config["evaluation"]["step_mics"],
+        ):
+            df1 = df_all[["freq", "NMSE", "SSIM", "num_mics", "num_file", "num_comb"]]
+            mic_results = df1.loc[df1["num_file"] == source]
+            mic_results = mic_results.loc[mic_results["num_mics"] == num_mics]
+            res = mic_results[["NMSE", "SSIM", "num_comb"]]
             nmse = []
             ssim = []
-            for num_comb in range(config['evaluation']['num_comb']):
-                #Add data for each combination
-                defin = res.loc[res['num_comb'] == num_comb]
-                nmse.append(defin['NMSE'].values)
-                ssim.append(defin['SSIM'].values)
+            for num_comb in range(config["evaluation"]["num_comb"]):
+                # Add data for each combination
+                defin = res.loc[res["num_comb"] == num_comb]
+                nmse.append(defin["NMSE"].values)
+                ssim.append(defin["SSIM"].values)
 
             nmse = np.asarray(nmse)
             ssim = np.asarray(ssim)
-        
-            #plot nmse mic results given all combinations
+
+            # plot nmse mic results given all combinations
             label = str(num_mics)
             m, lb, ub = mean_confidence_interval(nmse)
             GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
 
-            #plot ssmi mic results given all combinations
+            # plot ssmi mic results given all combinations
             label = str(num_mics)
             m, lb, ub = mean_confidence_interval(ssim)
             GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)
 
-        pretty_plot(GLOBAL_NMSE, 'NMSE', plot_path, source)
-        pretty_plot(GLOBAL_SSIM, 'SSIM', plot_path, source)
+        pretty_plot(GLOBAL_NMSE, "NMSE", plot_path, source)
+        pretty_plot(GLOBAL_SSIM, "SSIM", plot_path, source)
 
 
 def analyze_and_plot_simulated_results(evaluation_path, config, dB=True):
-    """ Read simulated results .csv files, analyze data, and plot.
+    """Read simulated results .csv files, analyze data, and plot.
 
-        Args:
-        evaluation_path: string
-        session_dir: string
-        config: dict
+    Args:
+    evaluation_path: string
+    session_dir: string
+    config: dict
 
-        """
+    """
 
-    filenames = [filename for filename in os.listdir(evaluation_path) if filename.endswith('.csv')]
+    filenames = [
+        filename
+        for filename in os.listdir(evaluation_path)
+        if filename.endswith(".csv")
+    ]
     freqs = get_frequencies()
 
     results = {}
 
-    for metric in ['NMSE', 'SSIM']:
+    for metric in ["NMSE", "SSIM"]:
         results[metric] = {}
 
-    for metric in ['NMSE', 'SSIM']:
-        for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
+    for metric in ["NMSE", "SSIM"]:
+        for num_mics in range(
+            config["evaluation"]["min_mics"],
+            config["evaluation"]["max_mics"],
+            config["evaluation"]["step_mics"],
+        ):
             results[metric][num_mics] = []
 
     print("Computing sample's individual performances")
     for num_file, filename in enumerate(filenames):
-        df_all = pd.read_csv(os.path.join(evaluation_path, filename))    
-        plt.figure(3, figsize = (25, 12.5))
+        df_all = pd.read_csv(os.path.join(evaluation_path, filename))
+        plt.figure(3, figsize=(25, 12.5))
         GLOBAL_NMSE = plt.axes()
-        plt.figure(11, figsize = (25, 12.5))
+        plt.figure(11, figsize=(25, 12.5))
         GLOBAL_SSIM = plt.axes()
 
-        file_results = df_all[['NMSE', 'SSIM', 'num_mics', 'num_comb']]
+        file_results = df_all[["NMSE", "SSIM", "num_mics", "num_comb"]]
 
-        for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
-            res = file_results.loc[file_results['num_mics'] == num_mics]
-            for num_comb in range(config['evaluation']['num_comb']):
-                defin = res.loc[res['num_comb'] == num_comb]
-                results['NMSE'][num_mics].append(defin['NMSE'].values)
-                results['SSIM'][num_mics].append(defin['SSIM'].values)
+        for num_mics in range(
+            config["evaluation"]["min_mics"],
+            config["evaluation"]["max_mics"],
+            config["evaluation"]["step_mics"],
+        ):
+            res = file_results.loc[file_results["num_mics"] == num_mics]
+            for num_comb in range(config["evaluation"]["num_comb"]):
+                defin = res.loc[res["num_comb"] == num_comb]
+                results["NMSE"][num_mics].append(defin["NMSE"].values)
+                results["SSIM"][num_mics].append(defin["SSIM"].values)
 
     print("Computing means")
-    for num_mics in range(config['evaluation']['min_mics'], config['evaluation']['max_mics'], config['evaluation']['step_mics']):
-        nmse = np.asarray(results['NMSE'][num_mics])
-        ssim = np.asarray(results['SSIM'][num_mics])
-        
+    for num_mics in range(
+        config["evaluation"]["min_mics"],
+        config["evaluation"]["max_mics"],
+        config["evaluation"]["step_mics"],
+    ):
+        nmse = np.asarray(results["NMSE"][num_mics])
+        ssim = np.asarray(results["SSIM"][num_mics])
+
         label = str(num_mics)
         try:
             m, lb, ub = mean_confidence_interval(nmse)
             if dB == True:
                 m = db(m)
-        
+
         except:
-        
+
             continue
-       
-        
+
         GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
-           
+
         label = str(num_mics)
         m, lb, ub = mean_confidence_interval(ssim)
         GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)
 
-    results_path = "".join([evaluation_path,"\\","average_performance"])
-    
+    results_path = "".join([evaluation_path, "\\", "average_performance"])
+
     if not os.path.exists(results_path):
         os.mkdir(results_path)
-    
+
     print("Saving plot files")
-    pretty_plot(GLOBAL_NMSE, 'NMSE', results_path,source = None, dB=dB)
-    pretty_plot(GLOBAL_SSIM, 'SSIM', results_path,source = None, dB=False)
+    pretty_plot(GLOBAL_NMSE, "NMSE", results_path, source=None, dB=dB)
+    pretty_plot(GLOBAL_SSIM, "SSIM", results_path, source=None, dB=False)
+
 
 def db(array):
 
-  CONSTANTE_REF = 0.6
+    CONSTANTE_REF = 0.6
 
-  ref = array[~np.isnan(array)]
-  ref = np.max(ref)/CONSTANTE_REF
-#   ref = 20*10**(-6)
-  array_in_dB = 20*np.log10(abs(array/ref))
+    ref = array[~np.isnan(array)]
+    ref = np.max(ref) / CONSTANTE_REF
+    array_in_dB = 20 * np.log10(abs(array / ref))
 
-  return array_in_dB
+    return array_in_dB
+
 
 def mean_confidence_interval(data, confidence=0.95):
-    """ Compute data mean and confidence boundaries.
+    """Compute data mean and confidence boundaries.
 
-        Args:
-        data: np.ndarray
-        confidence: float
+    Args:
+    data: np.ndarray
+    confidence: float
 
-        Returns: np.ndarray, np.ndarray, np.ndarray
+    Returns: np.ndarray, np.ndarray, np.ndarray
 
-        """
-    import pdb
-    pdb.set_trace()
+    """
+
     data = 1.0 * np.array(data)
     n = len(data)
     m, se = np.mean(data, axis=0), scipy.stats.sem(data)
-    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
-    return m, m-h, m+h
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2.0, n - 1)
+    return m, m - h, m + h
 
-def plot_mean_and_CI(axes, mean, lb, ub, label, freqs, linestyle='-'):
-    """ Plot mean and confidence boundaries.
 
-        Args:
-        axes: plt.axes
-        mean: np.ndarray
-        lb: np.ndarray
-        ub: np.ndarray
-        label: string
-        freqs: list
-        linestyle: string
+def plot_mean_and_CI(axes, mean, lb, ub, label, freqs, linestyle="-"):
+    """Plot mean and confidence boundaries.
 
-        Returns: plt.axes
+    Args:
+    axes: plt.axes
+    mean: np.ndarray
+    lb: np.ndarray
+    ub: np.ndarray
+    label: string
+    freqs: list
+    linestyle: string
 
-        """
+    Returns: plt.axes
 
-    axes.plot(freqs, mean, label=label, marker = 'o', linestyle=linestyle)
+    """
+
+    axes.plot(freqs, mean, label=label, marker="o", linestyle=linestyle)
 
     return axes
 
-def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
-    """ Set plot parameters and save plot to svg file.
+
+def pretty_plot(axes, metric_name, plot_path, source=None, dB=False):
+    """Set plot parameters and save plot to svg file.
 
     Args:
     axes: plt.axes
@@ -587,9 +651,11 @@ def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
 
     """
 
-    legends = ["".join((mics," mics")) for mics in axes.get_legend_handles_labels()[-1]]
-    axes.legend(legends,prop={'size': 22})
-    axes.set_xscale('log')
+    legends = [
+        "".join((mics, " mics")) for mics in axes.get_legend_handles_labels()[-1]
+    ]
+    axes.legend(legends, prop={"size": 22})
+    axes.set_xscale("log")
 
     axes.xaxis.set_minor_formatter(mticker.ScalarFormatter())
     axes.xaxis.set_major_formatter(mticker.ScalarFormatter())
@@ -599,24 +665,25 @@ def pretty_plot(axes, metric_name, plot_path, source=None, dB = False):
         tick.label.set_fontsize(30)
     for tick in axes.xaxis.get_minor_ticks():
         tick.label.set_fontsize(30)
-    axes.grid(True,which="both",ls="--",c='gray')
-    axes.set_xlabel('Frequency [Hz]', fontsize=30)
+    axes.grid(True, which="both", ls="--", c="gray")
+    axes.set_xlabel("Frequency [Hz]", fontsize=30)
     if dB:
-      axes.set_ylabel("".join([metric_name," ","(dB)"]), fontsize=30)
+        axes.set_ylabel("".join([metric_name, " ", "(dB)"]), fontsize=30)
     else:
-      axes.set_ylabel("".join([metric_name," ","[-]"]), fontsize=30)
+        axes.set_ylabel("".join([metric_name, " ", "[-]"]), fontsize=30)
     if source != None:
-        axes.set_title(metric_name + ' at source position ' + str(source), fontsize=30)
-        filename = metric_name + '_at_source_position_' + str(source) + ".png"
+        axes.set_title(metric_name + " at source position " + str(source), fontsize=30)
+        filename = metric_name + "_at_source_position_" + str(source) + ".png"
     else:
         axes.set_title(metric_name, fontsize=30)
-        filename = "".join([metric_name,".png"])
-    
+        filename = "".join([metric_name, ".png"])
+
     axes.figure.savefig(os.path.join(plot_path, filename))
     axes.figure.show()
 
+
 def plot_2D(data, filepath):
-    """ Plot 2D data without white margins.
+    """Plot 2D data without white margins.
 
     Args:
     data: np.ndarray
@@ -625,25 +692,83 @@ def plot_2D(data, filepath):
     """
 
     plt.figure()
-    plt.imshow(data)
+    rotated_data = ndimage.rotate(data, 90)
+    plt.imshow(rotated_data,cmap="jet")
     ax = plt.gca()
     ax.xaxis.set_major_locator(mticker.NullLocator())
     ax.yaxis.set_major_locator(mticker.NullLocator())
-    plt.axis('off')
-    plt.margins(0,0)
-    plt.savefig(filepath, bbox_inches='tight', pad_inches=0)
+    plt.axis("off")
+    plt.margins(0, 0)
+    plt.savefig(filepath, bbox_inches="tight", pad_inches=0)
     plt.close()
+
+
+def plot_scatter_sf(plotted_sf: np.array, 
+                    coord: np.array, 
+                    savepath: str, 
+                    freq: int, 
+                    save: bool = False
+    ) -> None:
+
+    """
+    Plots a scatter plot representing the soundfield on .mat file contained on
+    "file_path"
+
+    Parameters
+    ----------
+    matpath : str
+        DESCRIPTION.
+    savepath : str
+    freq: int, optional
+        DESCRIPTION. The frequency which soundfield will be plotted
+    save: bool, optional
+    -------
+    None.
+
+    """
+    def magnitude_to_db(array: np.array, ref: float = 2 * (10**-5)) -> np.array:
+
+        return 20 * np.log10(array / ref)
+
+    frequency = np.array(get_frequencies())
+    freq_idx = np.where(frequency == freq)[0]
+    if len(freq_idx) == 0:
+        raise IndexError(
+            f"There is not information about {freq} Hz. Available frequencies: {frequency}"
+        )
+    f_response = np.reshape(plotted_sf, (32, 32, 40))
+    soundfield = np.transpose(f_response, (1, 0, 2))
+    soundfield = np.flip(f_response,axis=0)
+    sf_gt = np.expand_dims(copy.deepcopy(soundfield), axis=0)
+
+    coordinates = coord
+    values = np.reshape(sf_gt[0, ..., freq_idx], (-1))
+    fig, axs = plt.subplots(1, 1)
+    max_x = coordinates[:, 0].max()
+    max_y = coordinates[:, 1].max()
+    aspect_ratio = max_y / (2 * max_x)
+    fig.set_figwidth(4)
+    fig.set_figheight(4 * aspect_ratio)
+    sc = axs.scatter(coordinates[:, 0], coordinates[:, 1], c=magnitude_to_db(values), cmap="jet")
+    fig.colorbar(sc, label="SPL [dB]")
+    axs.set_title(f"Sound Pressure along the room ({freq} Hz)")
+    axs.set_xlabel("[m]")
+    axs.set_ylabel("[m]")
+    if save:
+        plt.savefig(savepath, bbox_inches="tight", pad_inches=0)
+        plt.close()
 
 """ Keras utility functions """
 
 # Code adopted from https://github.com/MathiasGruber/PConv-Keras
 
+
 class PConv2D(Conv2D):
     def __init__(self, *args, **kwargs):
         """Set PConv2D parameters.
-            Args:
-            config: dict
-            train_bn: boolean
+        Args:
+        config: dict
+        train_bn: boolean
         """
 
         super().__init__(*args, **kwargs)
@@ -655,41 +780,49 @@ class PConv2D(Conv2D):
         input_shape: list
         """
 
-        if self.data_format == 'channels_first':
+        if self.data_format == "channels_first":
             channel_axis = 1
         else:
             channel_axis = -1
 
         if input_shape[0][channel_axis] is None:
-            raise ValueError('The channel dimension of the inputs should be defined. Found `None`.')
+            raise ValueError(
+                "The channel dimension of the inputs should be defined. Found `None`."
+            )
 
         self.input_dim = input_shape[0][channel_axis]
 
         # Sound field kernel
         kernel_shape = self.kernel_size + (self.input_dim, self.filters)
-        self.kernel = self.add_weight(shape=kernel_shape,
-                                      initializer=self.kernel_initializer,
-                                      name='sf_kernel',
-                                      regularizer=self.kernel_regularizer,
-                                      constraint=self.kernel_constraint)
+        self.kernel = self.add_weight(
+            shape=kernel_shape,
+            initializer=self.kernel_initializer,
+            name="sf_kernel",
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
+        )
         # Mask kernel
-        self.kernel_mask = K.ones(shape=self.kernel_size + (self.input_dim, self.filters))
+        self.kernel_mask = K.ones(
+            shape=self.kernel_size + (self.input_dim, self.filters)
+        )
 
         # Calculate padding size to achieve zero-padding
         self.pconv_padding = (
-            (int((self.kernel_size[0]-1)/2), int((self.kernel_size[0]-1)/2)),
-            (int((self.kernel_size[0]-1)/2), int((self.kernel_size[0]-1)/2)),
+            (int((self.kernel_size[0] - 1) / 2), int((self.kernel_size[0] - 1) / 2)),
+            (int((self.kernel_size[0] - 1) / 2), int((self.kernel_size[0] - 1) / 2)),
         )
 
         # Window size - used for normalization
         self.window_size = self.kernel_size[0] * self.kernel_size[1]
 
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.filters,),
-                                        initializer=self.bias_initializer,
-                                        name='bias',
-                                        regularizer=self.bias_regularizer,
-                                        constraint=self.bias_constraint)
+            self.bias = self.add_weight(
+                shape=(self.filters,),
+                initializer=self.bias_initializer,
+                name="bias",
+                regularizer=self.bias_regularizer,
+                constraint=self.bias_constraint,
+            )
         else:
             self.bias = None
         self.built = True
@@ -703,7 +836,10 @@ class PConv2D(Conv2D):
 
         # Both sound field and mask must be supplied
         if type(inputs) is not list or len(inputs) != 2:
-            raise Exception('PartialConvolution2D must be called on a list of two tensors [sf, mask]. Instead got: ' + str(inputs))
+            raise Exception(
+                "PartialConvolution2D must be called on a list of two tensors [sf, mask]. Instead got: "
+                + str(inputs)
+            )
 
         # Padding done explicitly so that padding becomes part of the masked partial convolution
         sfs = K.spatial_2d_padding(inputs[0], self.pconv_padding, self.data_format)
@@ -711,20 +847,22 @@ class PConv2D(Conv2D):
 
         # Apply convolutions to mask
         mask_output = K.conv2d(
-            masks, self.kernel_mask,
+            masks,
+            self.kernel_mask,
             strides=self.strides,
-            padding='valid',
+            padding="valid",
             data_format=self.data_format,
-            dilation_rate=self.dilation_rate
+            dilation_rate=self.dilation_rate,
         )
 
         # Apply convolutions to sound field
         sf_output = K.conv2d(
-            (sfs*masks), self.kernel,
+            (sfs * masks),
+            self.kernel,
             strides=self.strides,
-            padding='valid',
+            padding="valid",
             data_format=self.data_format,
-            dilation_rate=self.dilation_rate
+            dilation_rate=self.dilation_rate,
         )
 
         # Calculate the mask ratio on each psoition in the output mask
@@ -741,10 +879,7 @@ class PConv2D(Conv2D):
 
         # Apply bias only to the sound field (if chosen to do so)
         if self.use_bias:
-            sf_output = K.bias_add(
-                sf_output,
-                self.bias,
-                data_format=self.data_format)
+            sf_output = K.bias_add(sf_output, self.bias, data_format=self.data_format)
 
         # Apply activations on the sound field
         if self.activation is not None:
@@ -759,29 +894,31 @@ class PConv2D(Conv2D):
         Returns: list
         """
 
-        if self.data_format == 'channels_last':
+        if self.data_format == "channels_last":
             space = input_shape[0][1:-1]
             new_space = []
             for i in range(len(space)):
                 new_dim = conv_utils.conv_output_length(
                     space[i],
                     self.kernel_size[i],
-                    padding='same',
+                    padding="same",
                     stride=self.strides[i],
-                    dilation=self.dilation_rate[i])
+                    dilation=self.dilation_rate[i],
+                )
                 new_space.append(new_dim)
             new_shape = (input_shape[0][0],) + tuple(new_space) + (self.filters,)
             return [new_shape, new_shape]
-        if self.data_format == 'channels_first':
+        if self.data_format == "channels_first":
             space = input_shape[2:]
             new_space = []
             for i in range(len(space)):
                 new_dim = conv_utils.conv_output_length(
                     space[i],
                     self.kernel_size[i],
-                    padding='same',
+                    padding="same",
                     stride=self.strides[i],
-                    dilation=self.dilation_rate[i])
+                    dilation=self.dilation_rate[i],
+                )
                 new_space.append(new_dim)
             new_shape = (input_shape[0], self.filters) + tuple(new_space)
             return [new_shape, new_shape]

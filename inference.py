@@ -2,13 +2,12 @@
 # Inference.py
 
 import os
-import util.util as util
 import sfun
 import data
 import copy
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import util.util as util
+from util.evaluation import plot_training_loss
 
 def get_general_checkpoint_path(session_dir, number_checkpoint):
     """Returns the path of the most recent checkpoint in session_dir.
@@ -96,7 +95,7 @@ def get_test_filenames(test_path):
             if filename.endswith(".mat")
         ]
         filenames.extend(filenames_list)
-    # filenames = [filename for filename in os.listdir(test_path) if filename.endswith('.mat')]
+    
     return filenames
 
 
@@ -321,7 +320,7 @@ def simulated_data_evaluation(config_path):
         print("Error: No checkpoint found in same directory as configuration file.")
         return
 
-    model = sfun.SFUN(config, train_bn=False)
+    model = sfun.SFUN(config, train_bn=True)
 
     evaluation_path = os.path.join(
         session_dir,
@@ -336,8 +335,14 @@ def simulated_data_evaluation(config_path):
 
     if not os.path.exists(evaluation_path):
         os.makedirs(evaluation_path)
-    
-    test_path = os.path.join(config["storage"]["path"],"datasets",config["dataset"]["name"],"simulated_soundfields", "test")
+
+    test_path = os.path.join(
+        config["storage"]["path"],
+        "datasets",
+        config["dataset"]["name"],
+        "simulated_soundfields",
+        "test")
+        
     filenames = get_test_filenames(test_path)
 
     frequencies = util.get_frequencies()
@@ -392,58 +397,18 @@ def simulated_data_evaluation(config_path):
     print("Analysing and plotting results...")
 
     util.analyze_and_plot_simulated_results(evaluation_path, config)
-    
-    history_file = "".join(["history_session_",str(config["training"]["session_id"]),".csv"])
-    session_history_path = os.path.join(session_dir,history_file)
+
+    history_file = "".join(
+        ["history_session_", str(config["training"]["session_id"]), ".csv"]
+    )
+    session_history_path = os.path.join(session_dir, history_file)
     plot_training_loss(history_path=session_history_path)
 
     print("Evaluation completed!")
 
-def plot_training_loss(history_path:str):
-    """
-    Plots loss and PSNR from the csv file
-    from "path"
-    """
-
-    df = pd.read_csv(history_path)
-    current_session = history_path.split("\\")[-2]
-    plt.figure(figsize=(10,10))
-    plt.subplot(2,1,1)
-    plt.plot(df["epoch"],df["loss"],"b",linewidth=2)
-    plt.plot(df["epoch"],df["val_loss"],"k",linewidth=2)
-    plt.grid()
-    plt.legend(["loss","val_loss"],loc=5, prop={'size': 15})
-    plt.title(f"Training Losses ({current_session})")
-    plt.ylim([0,5])
-    plt.xlabel("Epoch")
-    
-    plt.subplot(2,1,2)
-    plt.plot(df["epoch"],df["PSNR"],"r",linewidth=2)
-    plt.plot(df["epoch"],df["val_PSNR"],"m",linewidth=2)
-    plt.grid()
-    plt.legend(["PSNR","val_PSNR"],loc=5, prop={'size': 15})
-    plt.title(f"Training PSNR ({current_session})")
-    plt.ylim([10,20])
-    plt.xlabel("Epoch")
-
-    config_path = os.path.join(history_path[:history_path.rfind("\\")],"config.json")
-    config = util.load_config(config_path)
-    save_path = os.path.join(history_path[:history_path.rfind("\\")],
-                                        "simulated_data_evaluation",
-                                        "min_mics_"
-                                        + str(config["evaluation"]["min_mics"])
-                                        + "_max_mics_"
-                                        + str(config["evaluation"]["max_mics"])
-                                        + "_step_mics_"
-                                        + str(config["evaluation"]["step_mics"])
-                                    )
-
-    # if not os.path.exists(individual_results_path):
-    #     os.mkdir(individual_results_path)
-    plt.savefig(os.path.join(save_path,"session_loss_history.png"))
 
 
-def visualize(config_path):
+def visualize_real(config_path):
     """Plot predictions of trained model on real data.
 
     Args:
@@ -467,19 +432,30 @@ def visualize(config_path):
 
     model = sfun.SFUN(config, train_bn=False)
 
-    visualization_path = os.path.join(session_dir,'visualization')
+    visualization_path = os.path.join(session_dir, "visualization")
     if not os.path.exists(visualization_path):
         os.makedirs(visualization_path)
 
-    dataset_path = os.path.join(config["storage"]["path"],"datasets", config["dataset"]["name"])
-    real_room_filepath =  os.path.join(dataset_path,"real_soundfields","RoomB_soundfield.mat")
+    dataset_path = os.path.join(
+        config["storage"]["path"], "datasets", config["dataset"]["name"]
+    )
+    real_room_filepath = os.path.join(
+        dataset_path, "real_soundfields", "RoomB_soundfield.mat"
+    )
 
     if not os.path.exists(real_room_filepath):
-        
+
         os.mkdir("".join([dataset_path, "/real_soundfields"]))
-        source_path = os.path.join(config["storage"]["path"],"datasets","real_soundfield_sample","RoomB_soundfield.mat")
-        destination_path = os.path.join(dataset_path,"real_soundfields","RoomB_soundfield.mat")
-        
+        source_path = os.path.join(
+            config["storage"]["path"],
+            "datasets",
+            "real_soundfield_sample",
+            "RoomB_soundfield.mat",
+        )
+        destination_path = os.path.join(
+            dataset_path, "real_soundfields", "RoomB_soundfield.mat"
+        )
+
         os.system(f"copy {source_path} {destination_path}")
 
     mask_generator = data.MaskGenerator(
@@ -546,7 +522,7 @@ def visualize(config_path):
             os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
         )
 
-def visualize_general(config_path):
+def visualize_simulated(config_path):
     """Plot predictions of trained model on SIMULATED data.
 
     Args:
@@ -570,21 +546,21 @@ def visualize_general(config_path):
 
     model = sfun.SFUN(config, train_bn=False)
 
-    visualization_path = os.path.join(session_dir,'visualization')
+    visualization_path = os.path.join(session_dir, "visualization")
     if not os.path.exists(visualization_path):
         os.makedirs(visualization_path)
 
-    dataset_path = os.path.join(config["storage"]["path"],"datasets", config["dataset"]["name"])
-    visualized_room_dir = os.path.join(dataset_path,"visualized_soundfields")
-    
+
     mask_generator = data.MaskGenerator(
         config["dataset"]["xSamples"] // config["dataset"]["factor"],
         config["dataset"]["ySamples"] // config["dataset"]["factor"],
         len(frequencies),
         num_mics=config["visualization"]["num_mics"],
     )
-    visualized_room_filename = os.listdir(visualized_room_dir)[-1]
-    visualized_room_filepath =  os.path.join(visualized_room_dir,visualized_room_filename)
+    prediction_room_filename = os.listdir(visualization_path)[-1]
+    visualized_room_filepath = os.path.join(
+        visualization_path, prediction_room_filename
+    )
     # Get measured sound field
 
     sf_sample = util.load_generated_soundfield(
@@ -641,106 +617,6 @@ def visualize_general(config_path):
             pred_sf[0, ..., num_freq],
             os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
         )
-def visualize_multiple_mics(config_path):
-    """Plot predictions of trained model on real data, using different
-    number of mics.
-
-        Args:
-        config_path: string
-
-    """
-
-    config = util.load_config(config_path)
-    searcher_path = "/content/gdrive/MyDrive/GitHub/sound-field-neural-network-58584a7774ecc997dec3663400843864cb6b79ed/config/searcher.json"
-    searcher_config = util.load_config(searcher_path)
-
-    print("Loaded configuration from: %s" % config_path)
-
-    frequencies = util.get_frequencies()
-
-    session_dir = config_path[: config_path.rfind("\\") + 1]
-
-    checkpoint_path = get_general_checkpoint_path(
-        session_dir=session_dir, number_checkpoint=-1
-    )
-    if not checkpoint_path:
-        print("Error: No checkpoint found in same directory as configuration file.")
-        return
-
-    model = sfun.SFUN(config, train_bn=False)
-
-    for num_mics in searcher_config["visualization"]["num_mics"]:
-        visualization_path = os.path.join(session_dir, f"visualization_{num_mics}")
-        if not os.path.exists(visualization_path):
-            os.makedirs(visualization_path)
-
-        filepath = os.path.join(
-            config["dataset"]["path"], "real_soundfields", "RoomB_soundfield.mat"
-        )
-
-        mask_generator = data.MaskGenerator(
-            config["dataset"]["xSamples"] // config["dataset"]["factor"],
-            config["dataset"]["ySamples"] // config["dataset"]["factor"],
-            len(frequencies),
-            num_mics=num_mics,
-        )
-
-        # Get measured sound field
-        sf_sample = util.load_RoomB_soundfield(
-            filepath, config["visualization"]["source"]
-        )
-        sf_gt = np.expand_dims(copy.deepcopy(sf_sample), axis=0)
-        initial_sf = np.expand_dims(sf_sample, axis=0)
-
-        # Get mask samples
-        mask = mask_generator.sample()
-        mask = np.expand_dims(mask, axis=0)
-
-        # preprocessing
-        irregular_sf, mask = util.preprocessing(
-            config["dataset"]["factor"], initial_sf, mask
-        )
-
-        # Save range to allow colorbar
-        util.save_pressure_range(sf_gt, visualization_path)
-        print("\tPressure range saved")
-        # Scale ground truth sound field
-        sf_gt = util.scale(sf_gt)
-
-        print("\nPlotting Ground Truth Sound Field Scaled...")
-        for num_freq, freq in enumerate(frequencies):
-            print("\tat frequency " + str(freq))
-            util.plot_2D(
-                sf_gt[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + "_Hz_Ground_Truth.png"),
-            )
-
-        print("\nPlotting Irregular Sound Field...")
-        for num_freq, freq in enumerate(frequencies):
-            print("\tat frequency " + str(freq))
-            util.plot_2D(
-                irregular_sf[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + "_Hz_Irregular_SF.png"),
-            )
-
-        print("\nPlotting Mask...")
-        for num_freq, freq in enumerate(frequencies):
-            print("\tat frequency " + str(freq))
-            util.plot_2D(
-                mask[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + "_Hz_Mask.png"),
-            )
-
-        pred_sf = model.predict([irregular_sf, mask])
-
-        print("\nPlotting Predicted Sound Field...")
-        for num_freq, freq in enumerate(frequencies):
-            print("\tat frequency " + str(freq))
-            util.plot_2D(
-                pred_sf[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
-            )
-
 
 def predict_soundfield(config_path):
     """Plot predictions of trained model on real data.
@@ -765,11 +641,9 @@ def predict_soundfield(config_path):
         return
     model = sfun.SFUN(config, train_bn=False)
 
-    visualization_path = os.path.join(session_dir, "prediction", "visualization")
-    if not os.path.exists(visualization_path):
-        os.makedirs(visualization_path)
-
     filepath = config["prediction"]["predicted_file_path"]
+
+    prediction_path = filepath[: filepath.rfind("\\") + 1]
     # Implementar tratamento de erro caso dê ""
     mask_generator = data.MaskGenerator(
         config["dataset"]["xSamples"] // config["dataset"]["factor"],
@@ -796,25 +670,22 @@ def predict_soundfield(config_path):
     )
 
     # Save range to allow colorbar
-    util.save_pressure_range(sf_gt, visualization_path)
+    util.save_pressure_range(sf_gt, prediction_path)
     print("\tPressure range saved")
     # Scale ground truth sound field
-    sf_gt = util.scale(sf_gt)
+
+    receiver_coords = util.load_receiver_coordinates(filepath)
 
     print("\nPlotting Ground Truth Sound Field Scaled...")
     for num_freq, freq in enumerate(frequencies):
         print("\tat frequency " + str(freq))
-        util.plot_2D(
-            sf_gt[0, ..., num_freq],
-            os.path.join(visualization_path, str(freq) + "_Hz_Ground_Truth.png"),
-        )
-
-    print("\nPlotting Irregular Sound Field...")
-    for num_freq, freq in enumerate(frequencies):
-        print("\tat frequency " + str(freq))
-        util.plot_2D(
-            irregular_sf[0, ..., num_freq],
-            os.path.join(visualization_path, str(freq) + "_Hz_Irregular_SF.png"),
+    
+        util.plot_scatter_sf(
+            plotted_sf=initial_sf,
+            coord=receiver_coords,
+            savepath=os.path.join(prediction_path, str(freq) + "_Hz_Ground_Truth.png"),
+            freq=freq,
+            save=True,
         )
 
     print("\nPlotting Mask...")
@@ -822,7 +693,7 @@ def predict_soundfield(config_path):
         print("\tat frequency " + str(freq))
         util.plot_2D(
             mask[0, ..., num_freq],
-            os.path.join(visualization_path, str(freq) + "_Hz_Mask.png"),
+            os.path.join(prediction_path, str(freq) + "_Hz_Mask.png"),
         )
 
     pred_sf = model.predict([irregular_sf, mask])
@@ -830,11 +701,11 @@ def predict_soundfield(config_path):
     print("\nPlotting Predicted Sound Field...")
     for num_freq, freq in enumerate(frequencies):
         print("\tat frequency " + str(freq))
-        util.plot_2D(
-            pred_sf[0, ..., num_freq],
-            os.path.join(visualization_path, str(freq) + "_Hz_Pred_SF.png"),
+
+        util.plot_scatter_sf(
+            plotted_sf=pred_sf,
+            coord=receiver_coords,
+            savepath=os.path.join(prediction_path, str(freq) + "_Hz_Pred_SF.png"),
+            freq=freq,
+            save=True,
         )
-    
-    util.save_predict_mat(original_file_path=filepath,
-                          pred_sf=pred_sf,
-                          save_path=visualization_path)

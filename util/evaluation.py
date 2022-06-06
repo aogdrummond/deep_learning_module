@@ -2,11 +2,10 @@ import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 import numpy as np
 import pandas as pd
-import scipy.io
-import math
 import os
 import PIL
 import json
+import util.util as util
 
 CSV_COLUMNS_NAMES=["name","num_file","xDim","yDim","m2","num_mics","num_comb","freq","NMSE","SSIM","pattern","p_real","p_predicted","p_previous"]
 
@@ -50,23 +49,6 @@ def normalize(sf_matrix:np.array,max_value:float,min_value:float)->np.array:
   normalized = np.divide(min_value + np.multiply((sf_matrix - sf_min),(max_value - min_value)),(sf_max - sf_min))
 
   return normalized
-
-
-def pa_to_db(sf_matrix:np.array,ref:float=20*10**(-6))->np.array:
- 
-  pressure_dB = 20*np.log10(abs(sf_matrix/ref))
-
-  return pressure_dB
-
-def db(dict_loss):
-
-  loss = np.array(dict_loss)
-  ref = loss[~np.isnan(loss)]
-  ref = np.max(ref)/0.6
-  dict_in_dB = 20*np.log10(abs(np.array(dict_loss)/ref))
-
-  return dict_in_dB
-
 
 def compare_soundfields_to_num_mics(root_path:str,freq:list,n_mics:list=[]):
   """
@@ -218,4 +200,54 @@ def insert_colorbar_in_image(fig: plt.figure,
   except:
 
     print("Pressure Range was not found")  
+
+
+def pa_to_db(sf_matrix:np.array,ref:float=20*10**(-6))->np.array:
+ 
+  pressure_dB = 20*np.log10(abs(sf_matrix/ref))
+
+  return pressure_dB
+
+def plot_training_loss(history_path: str):
+    """
+    Plots loss and PSNR from the csv file
+    from "path"
+    """
+
+    df = pd.read_csv(history_path)
+    current_session = history_path.split("\\")[-2]
+    plt.figure(figsize=(10, 10))
+    plt.subplot(2, 1, 1)
+    plt.plot(df["epoch"], df["loss"], "b", linewidth=2)
+    plt.plot(df["epoch"], df["val_loss"], "k", linewidth=2)
+    plt.grid()
+    plt.legend(["loss", "val_loss"], loc=5, prop={"size": 15})
+    plt.title(f"Training Losses ({current_session})")
+    plt.ylim([0, 5])
+    plt.xlabel("Epoch")
+
+    plt.subplot(2, 1, 2)
+    plt.plot(df["epoch"], df["PSNR"], "r", linewidth=2)
+    plt.plot(df["epoch"], df["val_PSNR"], "m", linewidth=2)
+    plt.grid()
+    plt.legend(["PSNR", "val_PSNR"], loc=5, prop={"size": 15})
+    plt.title(f"Training PSNR ({current_session})")
+    plt.ylim([10, 20])
+    plt.xlabel("Epoch")
+
+    config_path = os.path.join(history_path[: history_path.rfind("\\")], "config.json")
+    config = util.load_config(config_path)
+    save_path = os.path.join(
+        history_path[: history_path.rfind("\\")],
+        "simulated_data_evaluation",
+        "min_mics_"
+        + str(config["evaluation"]["min_mics"])
+        + "_max_mics_"
+        + str(config["evaluation"]["max_mics"])
+        + "_step_mics_"
+        + str(config["evaluation"]["step_mics"]),
+    )
+
+    plt.savefig(os.path.join(save_path, "session_loss_history.png"))
+
 

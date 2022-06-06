@@ -30,22 +30,20 @@ def main():
     elif cla.mode == "real-eval":
         inference.real_data_evaluation(cla.config)
     elif cla.mode == "ssim-nmse":
-        evaluation.evaluate_ssim_nmse(cla.config)
+        evaluation.evaluate_general_ssim_nmse(cla.config)
         evaluation.compare_soundfields(cla.config)
     elif cla.mode == "train":
         training.train(cla.config)
-    # elif cla.mode == "finetune":
-    #     training.model_finetuning(cla.config)
-    elif cla.mode == "visualize":
-        inference.visualize(cla.config)
+    elif cla.mode == "visualize-real":
+        inference.visualize_real(cla.config)
+    elif cla.mode == "visualize-sim":
+        inference.visualize_simulated(cla.config)
     elif cla.mode == "prediction":
         inference.predict_soundfield(cla.config)
-    # elif cla.mode == "mics_visualize":
-    #     inference.visualize_multiple_mics(cla.config)
-
+    
     else:
         print(
-            "Error: invalid operational mode - options: train, sim-eval, real-eval or visualize"
+            "Error: invalid operational mode - options: train, sim-eval, real-eval, visualize-real, visualize-sim, ssim-nmse or prediction"
         )
 
 
