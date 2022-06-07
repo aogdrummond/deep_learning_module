@@ -571,8 +571,6 @@ def visualize_simulated(config_path,multiple_mics=False):
             visualization_path, prediction_room_filename
         )
         # Get measured sound field
-        import pdb
-        pdb.set_trace()
         sf_sample = util.load_generated_soundfield(
             visualized_room_filepath, config["visualization"]["source"]
         )
