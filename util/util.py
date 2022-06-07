@@ -450,7 +450,7 @@ def compute_average_pressure(soundfield_slice):
 """ Analysis and plotting tools for real sound fields """
 
 
-def analyze_and_plot_real_results(results_filepath, config):
+def analyze_and_plot_real_results(results_filepath, config, dB = True):
     """Read real results .csv files, analyze data, and plot.
 
     Args:
@@ -493,10 +493,16 @@ def analyze_and_plot_real_results(results_filepath, config):
 
             # plot nmse mic results given all combinations
             label = str(num_mics)
-            m, lb, ub = mean_confidence_interval(nmse)
+            try:
+                m, lb, ub = mean_confidence_interval(nmse)
+                if dB == True:
+                    m = db(m)
+            except:
+                continue
+
             GLOBAL_NMSE = plot_mean_and_CI(GLOBAL_NMSE, m, lb, ub, label, freqs)
 
-            # plot ssmi mic results given all combinations
+            # plot ssim mic results given all combinations
             label = str(num_mics)
             m, lb, ub = mean_confidence_interval(ssim)
             GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)

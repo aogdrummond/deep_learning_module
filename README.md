@@ -37,7 +37,11 @@ The project has been tested with Keras 2.2.4, CUDA 8.0, CUDNN 7.1.3 on Ubuntu 18
 
 ## Usage
 
+ATUALIZAR
+
 There are four operating modes: training, simulated data evaluation, real data evaluation, and visualization. A JSON-formatted configuration file defines the parameters of an existing or a new session. The structure of this configuration file is described [here](config/config.md).
+
+EXPLICAR QUE É NECESSÁRIO ABRIR O ANACONDA PROMPT, ATIVAR O VENV E MUDAR O DIRETÓRIO ANTES DE RODAR O COMANDO
 
 #### Training
 
@@ -53,10 +57,7 @@ To begin the simulated data evaluation: `python main.py --mode sim-eval --config
 
 To evaluate a model we present every room in the simulated test set with several microphones locations to the most recent checkpoint present in a session folder, and calculate the Normalized Mean Square Error (NMSE) and the Structural Similarity (SSIM) over all analyzed frequencies.
 
-A new directory named `simulated_data_evaluation` is created inside the session folder. It contains a `.csv` file (for each room) containg each individual result and plots showing the performance of the model regarding the metrics and the number of microphones. It also contains a folder called "average_performance" where are saved the plots of NMSE and SSIM averaged in the test set.
-
-ACRESCENTAR O PLOT DO LOSS
-
+A new directory named `simulated_data_evaluation` is created inside the session folder. It contains a `.csv` file (for each room) containg each individual result and plots showing the performance of the model regarding the metrics and the number of microphones. 
 #### Real Data Evaluation
 
 To begin the real data evaluation: `python main.py --mode real-eval --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
@@ -67,7 +68,8 @@ A new directory named `real_data_evaluation` is created inside the session folde
 
 #### Evaluation
 
-ESCREVER SOBRE O QUE FAZ E DAR UM NOME MELHOR PARA ISSO AQUI
+Runs the model evaluation through NMSE and SSIM metrics, evaluating the average performance from the `.csv` files created at `simulated_data_evaluation`. It will create in the same directory containing the csv's a folder called "average_performance", where are saved the plots of NMSE and SSIM averaged. Lastly, a `.jpg` file containing the plot with history of training and validation loss during the training will be saved.
+
 
 #### Visualization
 
@@ -81,7 +83,7 @@ A new directory named `visualization` is created inside the session folder. It c
 
 We may wish to visualize the sound field reconstruction on simulated data generated on MATLAB or FEMDER.
 
-To predict it: `python main.py --mode prediction --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
+To predict it: `python main.py --mode predict --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
 
 A new directory named `prediction` is created inside the session folder. It contains images of the ground truth sound field, the irregular sound field gathered, the mask, and the predicted sound field for each analyzed frequency. It is used the most recent checkpoint present in the session folder.
 
