@@ -76,21 +76,6 @@ class Dataset():
 
         return soundfields, file_paths
 
-        # filenames = [filename for filename in os.listdir(directory_path) if filename.endswith('.mat')]
-
-        # file_paths = []
-        # soundfields = []
-
-        # for filename in filenames:
-
-        #     filepath = os.path.join(directory_path, filename)
-        #     file_paths.append(filepath)
-        #     soundfield = util.load_soundfield(filepath, self.freq)
-        #     soundfields.append(soundfield)
-
-        # return soundfields, file_paths
-
-
     def get_random_batch_generator(self, set):
         """ Generates batches of set data.
 

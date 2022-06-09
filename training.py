@@ -14,7 +14,7 @@ def create_new_session(config):
     config: dict, session configuration parameters
     """
     sessions_storage_path = os.path.join(config["storage"]["path"],
-                                         "neural_network_sessions")
+                                         "neural_network_sessions/")
 
     if "session_dir" not in config["training"]:
 

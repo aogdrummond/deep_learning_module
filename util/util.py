@@ -149,6 +149,22 @@ def save_pressure_range(sf_matrix, folder_path):
     with open(json_path, "w") as pressure_file:
         json.dump(pressure_range, pressure_file)
 
+def save_soundfield_mat(pred_sf: np.array,
+                        receiver_coordinates: np.array,
+                        save_path: str,
+                        ):
+
+    pred_mat = {}
+    pred_sf = pred_sf.reshape(32,32,40) 
+    pred_mat["Receiver_Coord"] = receiver_coordinates
+    pred_mat["AbsFrequencyResponse"] = pred_sf
+    pred_mat["Frequency"] = get_frequencies()
+    pred_mat["FrequencyResponse"] = []
+    file_path = os.path.join(save_path,f"predicted_sf.mat")
+
+    scipy.io.savemat(file_path,pred_mat)
+    
+
 def get_frequencies():
     """Loads the frequency numbers found at 'util/frequencies.txt'.
 
@@ -587,7 +603,7 @@ def analyze_and_plot_simulated_results(evaluation_path, config, dB=True):
         m, lb, ub = mean_confidence_interval(ssim)
         GLOBAL_SSIM = plot_mean_and_CI(GLOBAL_SSIM, m, lb, ub, label, freqs)
 
-    results_path = "".join([evaluation_path, "\\", "average_performance"])
+    results_path = "".join([evaluation_path, "/", "average_performance"])
 
     if not os.path.exists(results_path):
         os.mkdir(results_path)

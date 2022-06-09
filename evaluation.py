@@ -11,10 +11,10 @@ def evaluate_general_ssim_nmse(config_path:str):
     """
     config = util.load_config(config_path)
     print('Loaded configuration from: %s' % config_path)
-    session_dir = config_path[:config_path.rfind('\\')+1]
+    session_dir = config_path[:config_path.rfind('/')+1]
     evaluation_path = os.path.join(session_dir, 'simulated_data_evaluation', 'min_mics_' + str(config['evaluation']['min_mics']) +
                                   '_max_mics_' + str(config['evaluation']['max_mics']) + '_step_mics_' +
-                                  str(config['evaluation']['step_mics']))
+                                  str(config['evaluation']['step_mics'])).replace("\\","/")
 
     if not os.path.exists(evaluation_path): os.mkdir(evaluation_path)
 
@@ -28,9 +28,8 @@ def compare_soundfields(config_path):
     config = util.load_config(config_path)
     print('Loaded configuration from: %s' % config_path)
 
-    session_dir = config_path[:config_path.rfind('\\')+1]
-    visualization_path = os.path.join(session_dir,"visualization\\")
-    
+    session_dir = config_path[:config_path.rfind("/")+1]
+    visualization_path = os.path.join(session_dir,"visualization/")
     show_soundfields(soundfield_path=visualization_path, 
                     freq_shown = config["evaluation"]["frequencies"])
 

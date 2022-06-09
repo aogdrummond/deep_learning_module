@@ -9,7 +9,7 @@ import numpy as np
 import util.util as util
 from util.evaluation import plot_training_loss
 
-def get_general_checkpoint_path(session_dir, number_checkpoint):
+def get_checkpoint_path(session_dir, number_checkpoint):
     """Returns the path of the most recent checkpoint in session_dir.
 
     Args:
@@ -206,7 +206,7 @@ def real_data_evaluation(config_path):
     config = util.load_config(config_path)
     print("Loaded configuration from: %s" % config_path)
 
-    session_dir = config_path[: config_path.rfind("\\") + 1]
+    session_dir = config_path[: config_path.rfind("/") + 1]
     checkpoint_path = get_latest_checkpoint_path(session_dir)
     if not checkpoint_path:
         print("Error: No checkpoint found in same directory as configuration file.")
@@ -313,10 +313,9 @@ def simulated_data_evaluation(config_path):
     config = util.load_config(config_path)
     print("Loaded configuration from: %s" % config_path)
 
-    session_dir = config_path[: config_path.rfind("\\") + 1]
+    session_dir = config_path[: config_path.rfind("/") + 1]
 
-    # checkpoint_path = get_latest_checkpoint_path(session_dir)
-    checkpoint_path = get_general_checkpoint_path(
+    checkpoint_path = get_checkpoint_path(
         session_dir=session_dir, number_checkpoint=-1
     )
     if not checkpoint_path:  # Model weights are loaded when creating the model object
@@ -424,9 +423,9 @@ def visualize_real(config_path):
 
     frequencies = util.get_frequencies()
 
-    session_dir = config_path[: config_path.rfind("\\") + 1]
+    session_dir = config_path[: config_path.rfind("/") + 1]
 
-    checkpoint_path = get_general_checkpoint_path(
+    checkpoint_path = get_checkpoint_path(
         session_dir=session_dir, number_checkpoint=-1
     )
     if not checkpoint_path:
@@ -538,9 +537,9 @@ def visualize_simulated(config_path,multiple_mics=False):
 
     frequencies = util.get_frequencies()
 
-    session_dir = config_path[: config_path.rfind("\\") + 1]
+    session_dir = config_path[: config_path.rfind("/") + 1]
 
-    checkpoint_path = get_general_checkpoint_path(
+    checkpoint_path = get_checkpoint_path(
         session_dir=session_dir, number_checkpoint=-1
     )
     if not checkpoint_path:
@@ -639,9 +638,9 @@ def predict_soundfield(config_path):
 
     frequencies = util.get_frequencies()
 
-    session_dir = config_path[: config_path.rfind("\\") + 1]
+    session_dir = config_path[: config_path.rfind("/") + 1]
 
-    checkpoint_path = get_general_checkpoint_path(
+    checkpoint_path = get_checkpoint_path(
         session_dir=session_dir, number_checkpoint=-1
     )
     if not checkpoint_path:
@@ -651,7 +650,7 @@ def predict_soundfield(config_path):
 
     filepath = config["prediction"]["predicted_file_path"]
 
-    prediction_path = filepath[: filepath.rfind("\\") + 1]
+    prediction_path = filepath[: filepath.rfind("/") + 1]
     
     mask_generator = data.MaskGenerator(
         config["dataset"]["xSamples"] // config["dataset"]["factor"],
@@ -705,6 +704,9 @@ def predict_soundfield(config_path):
         )
 
     pred_sf = model.predict([irregular_sf, mask])
+    util.save_soundfield_mat(pred_sf,
+                            receiver_coordinates=receiver_coords,
+                            save_path=prediction_path)
 
     print("\nPlotting Predicted Sound Field...")
     for num_freq, freq in enumerate(frequencies):

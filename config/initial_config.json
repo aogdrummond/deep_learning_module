@@ -1,11 +1,11 @@
 {
     "storage": {
-        "path": "D:\\DL_Datasets\\TCC_Files_Generation\\"
+        "path": "D:/DL_Datasets/TCC_Files_Generation/"
     },
     "dataset": {
         "factor": 4,
         "num_freq": 40,
-        "name": "rectangular_dataset",
+        "name": "rectangular_dataset/",
         "xSamples": 32,
         "ySamples": 32
     },
@@ -28,10 +28,10 @@
             "valid_weight": 1
         },
         "lr": 0.0002,
-        "num_epochs": 2000,
+        "num_epochs": 2,
         "num_steps_train": 1,
         "num_steps_val": 1,
-        "session_id": 1
+        "session_id": 99
     },
     "visualization": {
         "num_mics": 10,
