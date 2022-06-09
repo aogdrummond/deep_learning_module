@@ -556,7 +556,17 @@ def visualize_simulated(config_path,multiple_mics=False):
         mics_simulated = [5,10,20,30,40,50]
     else:
         mics_simulated = [config["visualization"]["num_mics"]]
-
+    
+    prediction_room_filename = os.listdir(visualization_path)[-1]
+    visualized_room_filepath = os.path.join(
+        visualization_path, prediction_room_filename
+    )
+    # Get measured sound field
+    sf_sample = util.load_generated_soundfield(
+        visualized_room_filepath, config["visualization"]["source"]
+    )
+    sf_gt = np.expand_dims(copy.deepcopy(sf_sample), axis=0)
+    initial_sf = np.expand_dims(sf_sample, axis=0)
     for num_mics in mics_simulated:
 
         mask_generator = data.MaskGenerator(
@@ -565,16 +575,6 @@ def visualize_simulated(config_path,multiple_mics=False):
             len(frequencies),
             num_mics=num_mics,
         )
-        prediction_room_filename = os.listdir(visualization_path)[-1]
-        visualized_room_filepath = os.path.join(
-            visualization_path, prediction_room_filename
-        )
-        # Get measured sound field
-        sf_sample = util.load_generated_soundfield(
-            visualized_room_filepath, config["visualization"]["source"]
-        )
-        sf_gt = np.expand_dims(copy.deepcopy(sf_sample), axis=0)
-        initial_sf = np.expand_dims(sf_sample, axis=0)
 
         # Get mask samples
         mask = mask_generator.sample()
@@ -596,7 +596,7 @@ def visualize_simulated(config_path,multiple_mics=False):
             print("\tat frequency " + str(freq))
             util.plot_2D(
                 irregular_sf[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + f"_Hz_Irregular_SF_{num_mics}.png"),
+                os.path.join(visualization_path, str(freq) + f"_Hz_Irregular_SF_{num_mics}_mics.png"),
             )
 
         print("\nPlotting Mask...")
@@ -604,7 +604,7 @@ def visualize_simulated(config_path,multiple_mics=False):
             print("\tat frequency " + str(freq))
             util.plot_2D(
                 mask[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + f"_Hz_Mask_{num_mics}.png"),
+                os.path.join(visualization_path, str(freq) + f"_Hz_Mask_{num_mics}_mics.png"),
             )
 
         pred_sf = model.predict([irregular_sf, mask])
@@ -614,7 +614,7 @@ def visualize_simulated(config_path,multiple_mics=False):
             print("\tat frequency " + str(freq))
             util.plot_2D(
                 pred_sf[0, ..., num_freq],
-                os.path.join(visualization_path, str(freq) + f"_Hz_Pred_SF_{num_mics}.png"),
+                os.path.join(visualization_path, str(freq) + f"_Hz_Pred_SF_{num_mics}_mics.png"),
             )
 
     print("\nPlotting Ground Truth Sound Field Scaled...")
@@ -622,7 +622,7 @@ def visualize_simulated(config_path,multiple_mics=False):
         print("\tat frequency " + str(freq))
         util.plot_2D(
             sf_gt[0, ..., num_freq],
-            os.path.join(visualization_path, str(freq) + f"_Hz_Ground_Truth_{num_mics}.png"),
+            os.path.join(visualization_path, str(freq) + f"_Hz_Ground_Truth.png"),
         )
 
 def predict_soundfield(config_path):

@@ -36,6 +36,8 @@ def main():
         training.train(cla.config)
     elif cla.mode == "visualize-real-room":
         inference.visualize_real(cla.config)
+    elif cla.mode == "visualize-many-mics":
+        inference.visualize_simulated(cla.config,multiple_mics=True)
     elif cla.mode == "compare-soundfields":
         evaluation.compare_soundfields(cla.config)
     elif cla.mode == "predict-sim":
@@ -43,7 +45,7 @@ def main():
     
     else:
         print(
-            "Error: invalid operational mode - options: train, sim-eval, real-eval, visualize-real-room, compare-soundfields, ssim-nmse or predict-sim"
+            "Error: invalid operational mode - options: train, sim-eval, real-eval, visualize-real-room, compare-soundfields, ssim-nmse, predict-sim or visualize-many-mics"
         )
 
 
