@@ -56,7 +56,7 @@ class SFUN(object):
         self.history_filename = "".join(
             [
                 "history_",
-                self._config["training"]["session_dir"].split("\\")[-1],
+                self._config["training"]["session_dir"].split("/")[-1],
                 ".csv",
             ]
         )

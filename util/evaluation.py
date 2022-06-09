@@ -89,7 +89,7 @@ def compare_soundfields_to_num_mics(root_path:str,freq:list,n_mics:list=[]):
 def show_soundfields(soundfield_path:str,
                      freq_shown:list,
                      figsize:tuple = (6.4,4.8)):
-
+  
   soundfield_files = os.listdir(soundfield_path)
   freq_list = sorted(freq_shown,key=int)
   GT = []
@@ -114,7 +114,7 @@ def show_soundfields(soundfield_path:str,
   valid_inputs.sort(key=int)
 
   fig, ax = plt.subplots(nrows=2,ncols=len(GT),figsize=figsize)
-  current_session = soundfield_path.split("\\")[-3].split("_")[-1]
+  current_session = soundfield_path.split("/")[-3].split("_")[-1]
   fig.suptitle(f"Session {current_session}", fontsize=20)
   
   for idx in range(len(GT)):
@@ -215,7 +215,7 @@ def plot_training_loss(history_path: str):
     """
 
     df = pd.read_csv(history_path)
-    current_session = history_path.split("\\")[-2]
+    current_session = history_path.split("/")[-2]
     plt.figure(figsize=(10, 10))
     plt.subplot(2, 1, 1)
     plt.plot(df["epoch"], df["loss"], "b", linewidth=2)
@@ -235,10 +235,10 @@ def plot_training_loss(history_path: str):
     plt.ylim([10, 20])
     plt.xlabel("Epoch")
 
-    config_path = os.path.join(history_path[: history_path.rfind("\\")], "config.json")
+    config_path = os.path.join(history_path[: history_path.rfind("/")], "config.json")
     config = util.load_config(config_path)
     save_path = os.path.join(
-        history_path[: history_path.rfind("\\")],
+        history_path[: history_path.rfind("/")],
         "simulated_data_evaluation",
         "min_mics_"
         + str(config["evaluation"]["min_mics"])

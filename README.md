@@ -17,7 +17,7 @@ Note that the provided pre-trained model predicts the 2D sound field with 1/12th
 
 
 ## Features
-* Suitable for rectangular rooms
+* Suitable for rectangular or symmetric rooms
 * Low number of microphones required
 * Accommodate irregular microphone distributions
 * Efficient Inference
@@ -25,70 +25,42 @@ Note that the provided pre-trained model predicts the 2D sound field with 1/12th
 ## Setup
 
 1. Install [miniconda](https://docs.conda.io/en/latest/miniconda.html)
-2. `git clone https://github.com/francesclluis/sound-field-neural-network.git`
-3. `cd sound-field-neural-network/`
-3. `conda env create -f environment.yml`
-4. `conda activate sfun`
-5. `./download_sample_dataset.sh` (~211MB)  or `./download_full_dataset.sh` (~62GB)
+2. Through Anaconda Prompt, create virtual environment and install dependencies:
 
-Check [this issue](https://github.com/francesclluis/sound-field-neural-network/issues/1) if you get errors when running `conda env create -f environment.yml`.
+```
+conda create -n deep_learning_module python=3.6 
+conda activate deep_learning_module
+conda install -c anaconda scipy
+conda install -c anaconda pandas
+conda install -c conda-forge matplotlib
+conda install -c anaconda scikit-image
+conda install -c conda-forge keras==2.2.4
+conda install -c conda-forge opencv
+conda install -c conda-forge tensorflow==1.12
+```
+
+3. Set storage's path on `config/initial_config.json` if required. By default it is set in the same driver as neural network and creation modules
+
 
 The project has been tested with Keras 2.2.4, CUDA 8.0, CUDNN 7.1.3 on Ubuntu 18.04 LTS. We reuse code from [MathiasGruber/PConv-Keras](https://github.com/MathiasGruber/PConv-Keras).
 
-## Usage
-
-ATUALIZAR
-
-There are four operating modes: training, simulated data evaluation, real data evaluation, and visualization. A JSON-formatted configuration file defines the parameters of an existing or a new session. The structure of this configuration file is described [here](config/config.md).
-
-EXPLICAR QUE É NECESSÁRIO ABRIR O ANACONDA PROMPT, ATIVAR O VENV E MUDAR O DIRETÓRIO ANTES DE RODAR O COMANDO
-
-#### Training
-
-Training sessions are differentiated from one another by a session ID defined in `initial_config.json`. All artifacts generated during training are placed in a folder corresponding to this session ID in the `neural_network_sessions/` folder, inside the storage directory.
-
-To start training: `python main.py --mode train --config <path_to_initial_config_file>`. Training will begin after the dataset is prepared for training.
-
-Alternatively, there is a pre-trained model available in the `sessions/` folder (called session_0) for quickly trying out with test data.
-
-#### Simulated Data Evaluation
-
-To begin the simulated data evaluation: `python main.py --mode sim-eval --config <path_to_sessions_config_file>`. Note: --config should contain the path to a configuration file *in a session folder, on default saved in the storage*.
-
-To evaluate a model we present every room in the simulated test set with several microphones locations to the most recent checkpoint present in a session folder, and calculate the Normalized Mean Square Error (NMSE) and the Structural Similarity (SSIM) over all analyzed frequencies.
-
-A new directory named `simulated_data_evaluation` is created inside the session folder. It contains a `.csv` file (for each room) containg each individual result and plots showing the performance of the model regarding the metrics and the number of microphones. 
-#### Real Data Evaluation
-
-To begin the real data evaluation: `python main.py --mode real-eval --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
-
-To evaluate a model we present the measured real room with several microphones locations to the most recent checkpoint present in a session folder, and calculate the Normalized Mean Square Error (NMSE) and the Structural Similarity (SSIM) over all analyzed frequencies.
-
-A new directory named `real_data_evaluation` is created inside the session folder. It contains a `.csv` file containg each individual result and plots for both source locations showing the performance of the model regarding the metrics and the number of microphones.
-
-#### Evaluation
-
-Runs the model evaluation through NMSE and SSIM metrics, evaluating the average performance from the `.csv` files created at `simulated_data_evaluation`. It will create in the same directory containing the csv's a folder called "average_performance", where are saved the plots of NMSE and SSIM averaged. Lastly, a `.jpg` file containing the plot with history of training and validation loss during the training will be saved.
-
-
-#### Visualization
-
-We may wish to visualize the sound field reconstruction on real data.
-
-To visualize on real data: `python main.py --mode visualize --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
-
-A new directory named `visualization` is created inside the session folder. It contains images of the ground truth sound field, the irregular sound field gathered, the mask, and the predicted sound field for each analyzed frequency. It is used the most recent checkpoint present in the session folder.
-
-#### Prediction
-
-We may wish to visualize the sound field reconstruction on simulated data generated on MATLAB or FEMDER.
-
-To predict it: `python main.py --mode predict --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
-
-A new directory named `prediction` is created inside the session folder. It contains images of the ground truth sound field, the irregular sound field gathered, the mask, and the predicted sound field for each analyzed frequency. It is used the most recent checkpoint present in the session folder.
 
 
 ## Dataset
 
 Scripts used for generating simulated sound fields are provided inside the `create_data` folder. Tested under Matlab 2018. Special thanks to Martin Bo Møller for the Green's function implementation.
 
+
+## Module Schema:
+
+* `main.py`: main file to run the application.
+* `data.py`: functionalities to load and process the data applied in the network.
+* `inference.py`: functionalities related to infer the soundfields using trained models.
+* `evaluation.py`: functionalities to evaluate the quality of prediction.
+* `sfun.py`: definition of neural network's architecture and parameters.
+* `training.py`: functionalities related to start the training of a model.
+* `util`: contains general functions and files required to the main applications.
+* `config`: contains the initial_config, setting the parameters for a new model to be created and start the training.
+* `create_dataset`: matlab scripts used to create the original dataset
+* `img`: images applie in the repo.
+* `sessions`: stores session_0, containing a trained model ready to be used.

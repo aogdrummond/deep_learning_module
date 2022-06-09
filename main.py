@@ -24,24 +24,26 @@ def main():
         print(
             "Error: --config flag is required. Enter the path to a configuration file."
         )
+    cla.config = cla.config.replace("\\","/")
 
     if cla.mode == "sim-eval":
         inference.simulated_data_evaluation(cla.config)
     elif cla.mode == "real-eval":
         inference.real_data_evaluation(cla.config)
-    elif cla.mode == "ssim-nmse":
+    elif cla.mode == "general-evaluation":
         evaluation.evaluate_general_ssim_nmse(cla.config)
-        evaluation.compare_soundfields(cla.config)
     elif cla.mode == "train":
         training.train(cla.config)
     elif cla.mode == "visualize-real-room":
         inference.visualize_real(cla.config)
+    elif cla.mode == "compare-soundfields":
+        evaluation.compare_soundfields(cla.config)
     elif cla.mode == "predict-sim":
         inference.predict_soundfield(cla.config)
     
     else:
         print(
-            "Error: invalid operational mode - options: train, sim-eval, real-eval, visualize-real-room, ssim-nmse or predict-sim"
+            "Error: invalid operational mode - options: train, sim-eval, real-eval, visualize-real-room, compare-soundfields, ssim-nmse or predict-sim"
         )
 
 
