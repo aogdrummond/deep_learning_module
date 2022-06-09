@@ -59,3 +59,8 @@ We may wish to visualize the sound field reconstruction on simulated data genera
 
 You just need to write on session's "config.json" file the path to the `.mat` file containing the original soundfield. It will run the prediction and save images with predicted soundfields, as well as a `.mat` with the prediction, in the same folder, so it is recommended to use an empty folder inside the session.
 
+#### **Compare prediction for different number of microphones**
+
+* Command: `python main.py --mode visualize-many-mics --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
+
+To plot the prediction using different number of microphones, but the same model, you just need to create a folder "visualization", if it is not created, and save in it the `.mat` file with the information about the simulated soundfield to be predicted. The visualization with a number of mics will be saved in the same folder. 
