@@ -42,6 +42,7 @@ A new directory named `real_data_evaluation` is created inside the session folde
 
 Runs the model evaluation through NMSE and SSIM metrics, evaluating the average performance from the `.csv` files created at `simulated_data_evaluation`. It will create in the same directory containing the csv's a folder called "average_performance", where are saved the plots of NMSE and SSIM averaged. Lastly, a `.jpg` file containing the plot with history of training and validation loss during the training will be saved.
 
+Requires `sim-eval` to be run before.
 
 #### **Visualization**
 
@@ -64,3 +65,9 @@ You just need to write on session's "config.json" file the path to the `.mat` fi
 * Command: `python main.py --mode visualize-many-mics --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
 
 To plot the prediction using different number of microphones, but the same model, you just need to create a folder "visualization", if it is not created, and save in it the `.mat` file with the information about the simulated soundfield to be predicted. The visualization with a number of mics will be saved in the same folder. 
+
+#### **Compare soundfields from prediction with ground truth**
+
+* Command: `python main.py --mode compare-soundfields --config <path_to_config_file>`. Note: --config should contain the path to a configuration file *in a session folder*.
+
+Requires `visualize-real-room` to be run before.
