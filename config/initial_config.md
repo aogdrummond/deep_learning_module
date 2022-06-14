@@ -45,3 +45,5 @@ Visualization of how it predicts a real room soundfield. In this case the ground
 Prediction of soundfields from simulated files.
  * **predicted_file_path**: *str* Complete path for the file which will be predicted and compared through trained model 
  * **num_mics**: *int* Number of microphones randomly located in the predicted room.
+
+ ### **Note:** Python uses forward slash ("/") as delimiter on pathes, while Windows by defaults uses backslash ("\\"). It may need to be adapted on the path, mainly on "Prediction", since it receives the path directly. Change it if a JSON Decode Error is raised.
