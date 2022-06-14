@@ -5,6 +5,7 @@ import os
 import sfun
 import data
 import copy
+import shutil
 import numpy as np
 import util.util as util
 from util.evaluation import plot_training_loss
@@ -227,17 +228,26 @@ def real_data_evaluation(config_path):
     if not os.path.exists(predict_path):
         os.makedirs(predict_path)
 
-    filepath = os.path.join(
+    folder_path = os.path.join(
         config["storage"]["path"],
         "datasets",
         config["dataset"]["name"],
-        "real_soundfields", 
-        "RoomB_soundfield.mat"
+        "real_soundfields"
     )
 
+    real_room_path = os.path.join(
+        folder_path,
+        "RoomB_soundfield.mat"
+    )
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+        real_soundfield_sample_path = "./real_soundfield_sample/RoomB_soundfield.mat"
+        shutil.copy(src=real_soundfield_sample_path,dst=real_room_path)
+        print("Real room sample copied to dataset.")
+
     # Get Ground Truth
-    soundfield_1 = util.load_RoomB_soundfield(filepath, 0)
-    soundfield_2 = util.load_RoomB_soundfield(filepath, 1)
+    soundfield_1 = util.load_RoomB_soundfield(real_room_path, 0)
+    soundfield_2 = util.load_RoomB_soundfield(real_room_path, 1)
 
     frequencies = util.get_frequencies()
 

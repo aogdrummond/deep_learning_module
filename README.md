@@ -38,6 +38,17 @@ conda install -c conda-forge keras==2.2.4
 conda install -c conda-forge opencv
 conda install -c conda-forge tensorflow==1.12
 ```
+**Bugfix**
+
+In command prompt:
+
+```
+copy bugfix\saving.py path-to-virtual-environment\lib\site-packages\keras\engine\saving.py
+```
+Example:
+```
+copy bugfix\saving.py C:\Users\aleogd\miniconda3\envs\deep_learning_module\lib\site-packages\keras\engine\saving.py
+```
 
 3. Set storage's path on `config/initial_config.json` if required. By default it is set in the same driver as neural network and creation modules
 
