@@ -42,9 +42,14 @@ conda install -c conda-forge tensorflow==1.12
 
 In command prompt, while in deep_learning_module directory:
 
+ON WINDOWS
 ```
 copy bugfix\saving.py path-to-virtual-environment\lib\site-packages\keras\engine\saving.py
 ```
+ON LINUX
+```
+cp bugfix/saving.py path-to-virtual-environment\lib\site-packages\keras\engine\saving.py
+
 Example:
 ```
 copy bugfix\saving.py C:\Users\aleogd\miniconda3\envs\deep_learning_module\Lib\site-packages\keras\engine\saving.py
